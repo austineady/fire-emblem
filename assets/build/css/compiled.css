@@ -1,0 +1,13 @@
+body {
+  border: 5px solid red;
+  margin: 20% auto 0;
+  width: 80%; }
+
+.test {
+  width: 31px;
+  height: 31px;
+  background-image: url("../../images/overworld/overworld-characters-clean.png");
+  background-position: -182px -165px;
+  background-repeat: no-repeat;
+  margin-left: 50px;
+  border: 1px solid black; }
