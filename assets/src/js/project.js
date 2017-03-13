@@ -1,12 +1,26 @@
 //=require functions.js
 
+var stage,
+    bg;
+
+var ratio = 1.5,
+    scale = 2,
+    scaleB = 1.5,
+    xStartB = 240 * scaleB,
+    yStartB = xStartB / ratio,
+    xStart = 240 * scale,
+    yStart = xStart / ratio;
+
 document.onload = createStage();
-var stage;
-var sprite;
 
 function createStage() {
+  var bge = document.getElementById('bg');
+  var main = document.getElementById('main');
+  main.width = xStartB;
+  main.height = yStartB;
+  bge.width = xStart;
+  bge.height = yStart;
   var stageBg = 'assets/images/background/bg-map-1.png';
-  var owPath = 'assets/images/overworld/overworld-characters-clean.png';
   var tanaPath = 'sprites/tana_pegasus_knight_lance_long.png';
   var lynPath = 'assets/images/animations/hero/lyn-clean.png';
   var brigandPath = 'assets/images/animations/enemy/brigand-clean.png';
@@ -19,26 +33,8 @@ function createStage() {
   var regY = 0;
   var regXe = 400;
 
-  var owData = {
-    // image to use
-    images: [],
-    // width, height, count(optional), registration x, registration y
-    frames: [
-      // x, y, width, height, imageIndex, regX, regY
-      [182, 165, 31, 31],
-      [182, 197, 31, 31],
-      [182, 229, 31, 31]
-    ],
-    animations: {
-      rest: {
-        frames: [0, 1, 2, 1, 0],
-        next: 'rest',
-        speed: 0.2
-      }
-    }
-  };
-
   var lynData = {
+    wid: 'lyn',
     // image to use
     images: [],
     // width, height, count(optional), registration x, registration y
@@ -94,26 +90,13 @@ function createStage() {
     }
   };
 
-  var owBrigand = {
-    images: [],
-    frames: [
-      [0, 230, 17, 17],
-      [23, 230, 17, 17],
-      [46, 230, 17, 17]
-    ],
-    animations: {
-      'idle': {
-        frames: [0, 1, 2, 1, 0],
-        next: 'idle',
-        speed: 0.5
-      }
-    }
-  };
-
   var brigand = {
+    wid: 'brigand',
+    posX: 70,
+    posY: 25,
     images: [],
     frames: [
-      [7, 0, 36, 54],
+      [3, 0, 38, 54],
       [46, 0, 38, 54],
       [94, 0, 36, 54],
       [140, 0, 36, 54],
@@ -127,21 +110,70 @@ function createStage() {
       [41, 60, 26, 54]
     ],
     animations: {
-      'idle': 0,
-      'attack': [0, 11, 'idle', .5]
+      idle: 0,
+      attack: [0, 11, 'attack', .2]
     }
   };
   stage = new createjs.Stage('main');
-  setBackground(stageBg);
-  //drawCircle();
+  createBgStage(stageBg);
   buildImage(lynPath, lynData, 'start', createSpriteAnimation);
+  buildImage(brigandPath, brigand, 'attack', createSpriteAnimation);
+}
+
+function createBgStage(bgi) {
+  var owBrigand = {
+    posRow: 2,
+    posCol: 3,
+    images: [],
+    frames: [
+      [0, 230, 17, 17],
+      [23, 230, 17, 17],
+      [46, 230, 17, 17]
+    ],
+    animations: {
+      'idle': {
+        frames: [0, 1, 2, 1],
+        next: 'idle',
+        framerate: 2
+      }
+    }
+  };
+
+  var owLynData = {
+    posRow: 8,
+    posCol: 14,
+    // image to use
+    images: [],
+    // width, height, count(optional), registration x, registration y
+    frames: [
+      // x, y, width, height, imageIndex, regX, regY
+      [189, 171, 16, 16],
+      [189, 203, 16, 16],
+      [189, 235, 16, 16]
+    ],
+    animations: {
+      'idle': {
+        frames: [0, 2, 1, 0],
+        next: 'idle',
+        framerate: 2
+      }
+    }
+  };
+
+  var brigandPath = 'assets/images/animations/enemy/brigand-clean.png';
+  var owPath = 'assets/images/overworld/overworld-characters-clean.png';
+
+  bg = new createjs.Stage('bg');
+  setBackground(bgi);
+  buildImage(owPath, owLynData, 'idle', createOverworld);
   buildImage(brigandPath, owBrigand, 'idle', createOverworld);
-  buildImage(owPath, owData, 'rest', createOverworld);
 }
 
 function setBackground(path) {
   var bitmap = new createjs.Bitmap(path);
-  stage.addChild(bitmap);
+  bitmap.scaleX = scale;
+  bitmap.scaleY = scale;
+  bg.addChild(bitmap);
 }
 
 function buildImage(path, data, action, cb) {
@@ -155,33 +187,46 @@ function buildImage(path, data, action, cb) {
 function createSpriteSheet(img, data, action, cb) {
   data.images.push(img);
   var ss = new createjs.SpriteSheet(data);
-  cb(ss, action);
+  cb(ss, action, data);
 }
 
-function createSpriteAnimation(ss, action) {
-  sprite = new createjs.Sprite(ss);
+function createSpriteAnimation(ss, action, data) {
+  window[data.wid] = new createjs.Sprite(ss);
+  sprite = window[data.wid];
   console.log(sprite);
-  sprite.y = 50;
+  sprite.y = data.posY ? data.posY : 50;
+  sprite.x = data.posX ? data.posX : 300;
+  sprite.scaleX = scaleB;
+  sprite.scaleY = scaleB;
   stage.addChild(sprite);
-  sprite.x = 170;
   stage.update();
   sprite.gotoAndStop(0);
 }
 
-function createOverworld(ss, action) {
+function createOverworld(ss, action, data) {
   var owChar = new createjs.Sprite(ss, action);
-  stage.addChild(owChar);
-  stage.update();
-  owChar.gotoAndPlay(action);
-  createjs.Ticker.addEventListener("tick", function() {
-    stage.update();
-  });
-  createjs.Ticker.setInterval(250);
+  var gridX = 240 / 16;
+  var gridY = 160 / 10;
+  gridX = xStart / 16; // 240 * 1.5 = 360
+  gridY = yStart / 10;
+  owChar.scaleX = scale;
+  owChar.scaleY = scale;
+  if(data.posCol !== undefined && data.posRow !== undefined) {
+    owChar.x = gridX * data.posCol;
+    owChar.y = gridY * data.posRow;
+  }
+  console.log(owChar);
+  bg.addChild(owChar);
+  bg.update();
+  owChar.gotoAndPlay('idle');
+  window.setInterval(function() {
+    bg.update();
+  }, 1000);
 }
 
 function playSprite(action, obj) {
   sprite = obj ? obj : sprite;
-  sprite.gotoAndPlay(action);
+  sprite.gotoAndPlay(0);
   createjs.Ticker.addEventListener("tick", function() {
     if(sprite.currentFrame > 4 && sprite.currentFrame < 12) {
       sprite.x = 70;
@@ -191,6 +236,50 @@ function playSprite(action, obj) {
     stage.update();
   });
 }
+
+function playSprite2() {
+  if(brigand.currentFrame === 0) {
+    brigand.gotoAndPlay('attack');
+  } else {
+    brigand.gotoAndPlay(brigand.currentFrame);
+  }
+  createjs.Ticker.addEventListener("tick", function() {
+    if(brigand.currentFrame > 4 && brigand.currentFrame < 12) {
+      brigand.x = 250;
+    } else {
+      brigand.x = 70;
+    }
+    stage.update();
+  });
+}
+
+function stopSprite(action, obj) {
+  sprite = obj ? obj : sprite;
+  sprite.gotoAndStop(0);
+  stage.update();
+}
+
+function stopSprite2() {
+  brigand.gotoAndStop(brigand.currentFrame);
+  stage.update();
+}
+
+function plusFrame() {
+  brigand.gotoAndStop(brigand.currentFrame);
+  brigand.currentFrame = brigand.currentFrame + 1;
+  brigand.gotoAndStop(brigand.currentFrame);
+  console.log(brigand.currentFrame);
+  stage.update();
+}
+
+function minusFrame() {
+  brigand.gotoAndStop(brigand.currentFrame);
+  brigand.currentFrame = brigand.currentFrame - 1;
+  brigand.gotoAndStop(brigand.currentFrame);
+  console.log(brigand.currentFrame);
+  stage.update();
+}
+
 
 function handleImageLoad(e) {
   console.log('Image Loaded:');
