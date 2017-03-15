@@ -23,6 +23,7 @@ function createStage() {
   var stageBg = 'assets/images/background/bg-map-1.png';
   var tanaPath = 'sprites/tana_pegasus_knight_lance_long.png';
   var lynPath = 'assets/images/animations/hero/lyn-clean.png';
+  var lynLoop = 'assets/images/animations/hero/lyn-loop.png';
   var brigandPath = 'assets/images/animations/enemy/brigand-clean.png';
 
   var y1 = 23;
@@ -90,10 +91,70 @@ function createStage() {
     }
   };
 
+  var lynLoopData = {
+    wid: 'lyn',
+    posY: 40,
+    posX: 230,
+    mv: 3,
+    // image to use
+    images: [],
+    // width, height, count(optional), registration x, registration y
+    frames: {width:64, height:64, count:22, regX:0, regY:0},
+    animations: {
+      idle: 0,
+      start: {
+        frames: [0, 2],
+        next: 'hold',
+        speed: .3
+      },
+      hold: {
+        frames: 3,
+        next: 'strike',
+        speed: .1
+      },
+      strike: {
+        frames: [4, 6],
+        next: 'wait',
+        speed: .5
+      },
+      wait: {
+        frames: 7,
+        next: 'jump',
+        speed: .1
+      },
+      jump: {
+        frames: 8,
+        next: 'air',
+        speed: .6
+      },
+      air: {
+        frames: 9,
+        next: 'land',
+        speed: .2
+      },
+      land: {
+        frames: [10, 13],
+        next: 'sheathe',
+        speed: .4
+      },
+      sheathe: {
+        frames: [14, 20],
+        next: 'end',
+        speed: .3
+      },
+      end: {
+        frames: [21, 22],
+        next: 'idle',
+        speed: .1
+      }
+    }
+  };
+
   var brigand = {
     wid: 'brigand',
-    posX: 70,
+    posX: 150,
     posY: 25,
+    mv: 4,
     images: [],
     frames: [
       [3, 0, 38, 54],
@@ -111,19 +172,24 @@ function createStage() {
     ],
     animations: {
       idle: 0,
-      attack: [0, 11, 'attack', .2]
+      attack: [0, 1, 'twist', .4],
+      twist: [1, 4, 'jump', .7],
+      jump: [5, 5, 'strike', .7],
+      strike: [6, 7, 'retreat', .5],
+      retreat: [8, 9, 'land', .4],
+      land: [10, 11, 'idle', .4]
     }
   };
   stage = new createjs.Stage('main');
   createBgStage(stageBg);
-  buildImage(lynPath, lynData, 'start', createSpriteAnimation);
+  buildImage(lynLoop, lynLoopData, 'start', createSpriteAnimation);
   buildImage(brigandPath, brigand, 'attack', createSpriteAnimation);
 }
 
 function createBgStage(bgi) {
   var owBrigand = {
-    posRow: 2,
-    posCol: 3,
+    posRow: 3,
+    posCol: 4,
     images: [],
     frames: [
       [0, 230, 17, 17],
@@ -140,7 +206,7 @@ function createBgStage(bgi) {
   };
 
   var owLynData = {
-    posRow: 8,
+    posRow: 9,
     posCol: 14,
     // image to use
     images: [],
@@ -164,9 +230,88 @@ function createBgStage(bgi) {
   var owPath = 'assets/images/overworld/overworld-characters-clean.png';
 
   bg = new createjs.Stage('bg');
+  //bg.addEventListener('click', handleStageClick);
   setBackground(bgi);
   buildImage(owPath, owLynData, 'idle', createOverworld);
   buildImage(brigandPath, owBrigand, 'idle', createOverworld);
+}
+
+function handleStageClick(e) {
+  console.log(e);
+  var xCalc = xStart / 15;
+  var yCalc = yStart / 10;
+  var rectCol = Math.floor(e.stageX / xCalc);
+  var rectRow = Math.floor(e.stageY / yCalc);
+  var col = rectCol * xCalc;
+  var row = rectRow * yCalc;
+  console.log(rectRow);
+  console.log(rectCol);
+  // var rect = new createjs.Shape();
+  // rect.graphics.beginFill('rgba(241, 68, 54, .6)').drawRect(col, row, xCalc, yCalc);
+
+  createMoveMap(5, rectCol, rectRow, xCalc, yCalc);
+}
+
+function createMoveMap(mv, col, row, w, h) {
+  // Current character coords
+  var cCalc = col * w;
+  var rCalc = row * h;
+  var cw = bg.canvas.clientWidth;
+  var ch = bg.canvas.clientHeight;
+  var matrixArr = [];
+  for(var i=0; i <= mv; i++) {
+    for(var idx=0; idx<= mv; idx++) {
+      if(idx + i <= mv && idx + i !== 0) {
+        matrixArr.push([idx, i]);
+      }
+    }
+  }
+  var newMatrix = [];
+  matrixArr.forEach(function(item) {
+    var newItem = [];
+    newItem[0] = (col + item[0]) * w;
+    newItem[1] = (row + item[1]) * h;
+    if(newMatrix.indexOf(newItem) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+      newMatrix.push(newItem);
+    }
+    newItem = [];
+    newItem[0] = (col - item[0]) * w;
+    newItem[1] = (row - item[1]) * h;
+    if(newMatrix.indexOf(newItem) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+      newMatrix.push(newItem);
+    }
+    newItem = [];
+    newItem[0] = (col + item[0]) * w;
+    newItem[1] = (row - item[1]) * h;
+    if(newMatrix.indexOf(newItem) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+      newMatrix.push(newItem);
+    }
+    newItem = [];
+    newItem[0] = (col - item[0]) * w;
+    newItem[1] = (row + item[1]) * h;
+    if(newMatrix.indexOf(newItem) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+      newMatrix.push(newItem);
+    }
+    return;
+  })
+  console.log(newMatrix);
+
+  drawMoveRects(newMatrix, w, h);
+}
+
+function drawMoveRects(arr, w, h) {
+  console.log(arr);
+  arr.forEach(function(coord) {
+    var rect = new createjs.Shape();
+    rect.posX = coord[0];
+    rect.posY = coord[1];
+    rect.col = coord[0] / w;
+    rect.row = coord[1] / h;
+    rect.graphics.beginFill('rgba(92, 165, 225, .6)').drawRect(coord[0], coord[1], w - 1, h - 1);
+    bg.addChild(rect);
+    console.log(rect);
+  });
+  bg.update();
 }
 
 function setBackground(path) {
@@ -192,29 +337,31 @@ function createSpriteSheet(img, data, action, cb) {
 
 function createSpriteAnimation(ss, action, data) {
   window[data.wid] = new createjs.Sprite(ss);
+  window[data.wid].wid = data.wid;
+  window[data.wid].mv = data.mv;
   sprite = window[data.wid];
-  console.log(sprite);
-  sprite.y = data.posY ? data.posY : 50;
-  sprite.x = data.posX ? data.posX : 300;
+  sprite.y = data.posY ? data.posY : 0;
+  sprite.x = data.posX ? data.posX : 0;
   sprite.scaleX = scaleB;
   sprite.scaleY = scaleB;
   stage.addChild(sprite);
-  stage.update();
+  renderDisplay(sprite);
   sprite.gotoAndStop(0);
 }
 
 function createOverworld(ss, action, data) {
   var owChar = new createjs.Sprite(ss, action);
-  var gridX = 240 / 16;
+  var gridX = 240 / 15;
   var gridY = 160 / 10;
-  gridX = xStart / 16; // 240 * 1.5 = 360
+  gridX = xStart / 15; // 240 * 1.5 = 360
   gridY = yStart / 10;
   owChar.scaleX = scale;
   owChar.scaleY = scale;
   if(data.posCol !== undefined && data.posRow !== undefined) {
-    owChar.x = gridX * data.posCol;
-    owChar.y = gridY * data.posRow;
+    owChar.x = gridX * (data.posCol - 1);
+    owChar.y = gridY * (data.posRow - 1);
   }
+  owChar.addEventListener('click', handleStageClick);
   console.log(owChar);
   bg.addChild(owChar);
   bg.update();
@@ -224,16 +371,10 @@ function createOverworld(ss, action, data) {
   }, 1000);
 }
 
-function playSprite(action, obj) {
-  sprite = obj ? obj : sprite;
-  sprite.gotoAndPlay(0);
+function playSprite() {
+  lyn.gotoAndPlay('start');
   createjs.Ticker.addEventListener("tick", function() {
-    if(sprite.currentFrame > 4 && sprite.currentFrame < 12) {
-      sprite.x = 70;
-    } else {
-      sprite.x = 170;
-    }
-    stage.update();
+    renderDisplay(lyn);
   });
 }
 
@@ -244,42 +385,102 @@ function playSprite2() {
     brigand.gotoAndPlay(brigand.currentFrame);
   }
   createjs.Ticker.addEventListener("tick", function() {
-    if(brigand.currentFrame > 4 && brigand.currentFrame < 12) {
-      brigand.x = 250;
+    if(brigand.currentFrame == 4) {
+      brigand.y = -10;
+      brigand.x = 80;
+    } else if(brigand.currentFrame == 5) {
+      brigand.x = 140;
+    } else if(brigand.currentFrame == 6) {
+      brigand.x = 190;
+    } else if(brigand.currentFrame == 7 || brigand.currentFrame == 8) {
+      brigand.x = 190;
+      brigand.y = 15;
+    } else if(brigand.currentFrame == 9) {
+      brigand.x = 150;
+      brigand.y = -5;
+    } else if(brigand.currentFrame == 10) {
+      brigand.x = 120;
+      brigand.y = -15;
+    } else if(brigand.currentFrame == 11) {
+      brigand.x = 90;
+      brigand.y = -15;
     } else {
       brigand.x = 70;
+      brigand.y = 25;
     }
-    stage.update();
+    renderDisplay(brigand);
   });
 }
 
 function stopSprite(action, obj) {
   sprite = obj ? obj : sprite;
   sprite.gotoAndStop(0);
-  stage.update();
+  stage.update(lyn);
 }
 
 function stopSprite2() {
   brigand.gotoAndStop(brigand.currentFrame);
+  renderDisplay(brigand);
+}
+
+function plusFrame(c) {
+  var char = window[c];
+  char.gotoAndStop(char.currentFrame);
+  char.currentFrame = char.currentFrame + 1;
+  char.gotoAndStop(char.currentFrame);
+  renderDisplay(char);
+}
+
+function minusFrame(c) {
+  var char = window[c];
+  char.gotoAndStop(char.currentFrame);
+  char.currentFrame = char.currentFrame - 1;
+  char.gotoAndStop(char.currentFrame);
+  renderDisplay(char);
+}
+
+function renderDisplay(c) {
+  var fd = document.getElementById(c.wid + '-current-frame');
+  var xd = document.getElementById(c.wid + '-x-offset');
+  var yd = document.getElementById(c.wid + '-y-offset');
+  fd.textContent = c.currentFrame;
+  modifyLynX(c.currentFrame);
+  if(xd.value.length === 0 && yd.value.length === 0) {
+    xd.value = c.x;
+    yd.value = c.y;
+  }
   stage.update();
 }
 
-function plusFrame() {
-  brigand.gotoAndStop(brigand.currentFrame);
-  brigand.currentFrame = brigand.currentFrame + 1;
-  brigand.gotoAndStop(brigand.currentFrame);
-  console.log(brigand.currentFrame);
-  stage.update();
+function modifyLynX(f) {
+  switch(f) {
+    case 4:
+      lyn.x = 200;
+      break;
+    case 5:
+      lyn.x = 170;
+      break;
+    case 6:
+    case 7:
+    case 8:
+      lyn.x = 200;
+      break;
+    default:
+      lyn.x = 230;
+      break;
+  }
+  return;
 }
 
-function minusFrame() {
-  brigand.gotoAndStop(brigand.currentFrame);
-  brigand.currentFrame = brigand.currentFrame - 1;
-  brigand.gotoAndStop(brigand.currentFrame);
-  console.log(brigand.currentFrame);
-  stage.update();
+function handleYOffsetChange(e, c) {
+  window[c].y = e.value;
+  renderDisplay(window[c]);
 }
 
+function handleXOffsetChange(e, c) {
+  window[c].x = e.value;
+  renderDisplay(window[c]);
+}
 
 function handleImageLoad(e) {
   console.log('Image Loaded:');
