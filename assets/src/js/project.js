@@ -1,7 +1,10 @@
 //=require functions.js
+//=require ui-functions.js
 
 var stage,
-    bg;
+    bg,
+    hero,
+    moveCache = [];
 
 var ratio = 1.5,
     scale = 2,
@@ -9,7 +12,9 @@ var ratio = 1.5,
     xStartB = 240 * scaleB,
     yStartB = xStartB / ratio,
     xStart = 240 * scale,
-    yStart = xStart / ratio;
+    yStart = xStart / ratio,
+    xCalc = xStart / 15,
+    yCalc = yStart / 10;
 
 document.onload = createStage();
 
@@ -26,75 +31,20 @@ function createStage() {
   var lynLoop = 'assets/images/animations/hero/lyn-loop.png';
   var brigandPath = 'assets/images/animations/enemy/brigand-clean.png';
 
-  var y1 = 23;
-  var y2 = 85;
-  var ht = 53;
-  var iidx = 0;
-  var regX = 500;
-  var regY = 0;
-  var regXe = 400;
-
-  var lynData = {
-    wid: 'lyn',
-    // image to use
-    images: [],
-    // width, height, count(optional), registration x, registration y
-    frames: [
-      // x, y, width, height, imageIndex, regX, regY
-      // start
-      [12, y1, 21, ht],
-      [43, y1, 21, ht],
-      [72, y1, 23, ht],
-      // hold
-      [106, y1, 27, ht],
-      [106, y1, 27, ht],
-      // strike
-      [147, y1, 52, ht],
-      [224, y1, 63, ht],
-      // wait
-      [308, y1, 45, ht],
-      [308, y1, 45, ht],
-      [308, y1, 45, ht],
-      // jump
-      [366, y1, 40, ht],
-      // air
-      [417, y1, 54, ht],
-      [417, y1, 54, ht],
-      [417, y1, 54, ht],
-      // land
-      [0, y2, 29, ht],
-      [43, y2, 28, ht],
-      [82, y2, 28, ht],
-      [82, y2, 28, ht],
-      [125, y2, 25, ht],
-      [156, y2, 38, ht],
-      // end
-      [204, y2, 29, ht],
-      [244, y2, 29, ht],
-      [284, y2, 23, ht],
-      [315, y2, 23, ht],
-      [351, y2, 24, ht],
-      [386, y2, 21, ht],
-      [417, y2, 21, ht],
-      [450, y2, 21, ht]
-    ],
-    animations: {
-      idle: 0,
-      start: [0, 2, 'hold', .5],
-      hold: [3, 4, 'strike', .3],
-      strike: [5, 6, 'wait', 1],
-      wait: [7, 9, 'jump', .3],
-      jump: [10, 11, 'air', .5],
-      air: [11, 13, 'land', .3],
-      land: [14, 19, 'end', .6],
-      end: [20, 27, 'idle', .6]
-    }
-  };
+  // var y1 = 23;
+  // var y2 = 85;
+  // var ht = 53;
+  // var iidx = 0;
+  // var regX = 500;
+  // var regY = 0;
+  // var regXe = 400;
 
   var lynLoopData = {
     wid: 'lyn',
     posY: 40,
     posX: 230,
+    row: 9,
+    col: 15,
     mv: 3,
     // image to use
     images: [],
@@ -184,7 +134,7 @@ function createStage() {
   createBgStage(stageBg);
   buildImage(lynLoop, lynLoopData, 'start', createSpriteAnimation);
   buildImage(brigandPath, brigand, 'attack', createSpriteAnimation);
-}
+};
 
 function createBgStage(bgi) {
   var owBrigand = {
@@ -230,35 +180,31 @@ function createBgStage(bgi) {
   var owPath = 'assets/images/overworld/overworld-characters-clean.png';
 
   bg = new createjs.Stage('bg');
-  //bg.addEventListener('click', handleStageClick);
   setBackground(bgi);
   buildImage(owPath, owLynData, 'idle', createOverworld);
   buildImage(brigandPath, owBrigand, 'idle', createOverworld);
 }
 
-function handleStageClick(e) {
-  console.log(e);
-  var xCalc = xStart / 15;
-  var yCalc = yStart / 10;
-  var rectCol = Math.floor(e.stageX / xCalc);
-  var rectRow = Math.floor(e.stageY / yCalc);
-  var col = rectCol * xCalc;
-  var row = rectRow * yCalc;
-  console.log(rectRow);
-  console.log(rectCol);
-  // var rect = new createjs.Shape();
-  // rect.graphics.beginFill('rgba(241, 68, 54, .6)').drawRect(col, row, xCalc, yCalc);
+function handleStageClick(char, e) {
+  var rectCol = pixelsToCols(e.stageX);
+  var rectRow = pixelsToRows(e.stageY);
+  char.col = rectCol;
+  char.row = rectRow;
+  hero = char;
 
-  createMoveMap(5, rectCol, rectRow, xCalc, yCalc);
+  createMoveMap(5, rectCol, rectRow, char);
 }
 
-function createMoveMap(mv, col, row, w, h) {
+function createMoveMap(mv, col, row, c) {
   // Current character coords
-  var cCalc = col * w;
-  var rCalc = row * h;
+  var cCalc = col * xCalc;
+  var rCalc = row * yCalc;
   var cw = bg.canvas.clientWidth;
   var ch = bg.canvas.clientHeight;
   var matrixArr = [];
+  var newMatrix = [];
+  var arrCache = [];
+
   for(var i=0; i <= mv; i++) {
     for(var idx=0; idx<= mv; idx++) {
       if(idx + i <= mv && idx + i !== 0) {
@@ -266,59 +212,122 @@ function createMoveMap(mv, col, row, w, h) {
       }
     }
   }
-  var newMatrix = [];
+
   matrixArr.forEach(function(item) {
     var newItem = [];
-    newItem[0] = (col + item[0]) * w;
-    newItem[1] = (row + item[1]) * h;
-    if(newMatrix.indexOf(newItem) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+    var cacheString = '';
+    newItem[0] = (col + item[0]) * xCalc;
+    newItem[1] = (row + item[1]) * yCalc;
+    cacheString = newItem[0] + ', ' + newItem[1];
+    if(arrCache.indexOf(cacheString) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+      arrCache.push(cacheString);
       newMatrix.push(newItem);
     }
     newItem = [];
-    newItem[0] = (col - item[0]) * w;
-    newItem[1] = (row - item[1]) * h;
-    if(newMatrix.indexOf(newItem) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+    newItem[0] = (col - item[0]) * xCalc;
+    newItem[1] = (row - item[1]) * yCalc;
+    cacheString = newItem[0] + ', ' + newItem[1];
+    if(arrCache.indexOf(cacheString) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+      arrCache.push(cacheString);
       newMatrix.push(newItem);
     }
     newItem = [];
-    newItem[0] = (col + item[0]) * w;
-    newItem[1] = (row - item[1]) * h;
-    if(newMatrix.indexOf(newItem) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+    newItem[0] = (col + item[0]) * xCalc;
+    newItem[1] = (row - item[1]) * yCalc;
+    cacheString = newItem[0] + ', ' + newItem[1];
+    if(arrCache.indexOf(cacheString) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+      arrCache.push(cacheString);
       newMatrix.push(newItem);
     }
     newItem = [];
-    newItem[0] = (col - item[0]) * w;
-    newItem[1] = (row + item[1]) * h;
-    if(newMatrix.indexOf(newItem) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+    newItem[0] = (col - item[0]) * xCalc;
+    newItem[1] = (row + item[1]) * yCalc;
+    cacheString = newItem[0] + ', ' + newItem[1];
+    if(arrCache.indexOf(cacheString) === -1 && newItem[0] < cw && newItem[0] > 0 && newItem[1] < ch) {
+      arrCache.push(cacheString);
       newMatrix.push(newItem);
     }
     return;
   })
-  console.log(newMatrix);
+  //console.log(newMatrix);
+  moveCache = newMatrix;
 
-  drawMoveRects(newMatrix, w, h);
+  drawMoveRects(newMatrix, c);
 }
 
-function drawMoveRects(arr, w, h) {
-  console.log(arr);
+function drawMoveRects(arr, c) {
   arr.forEach(function(coord) {
     var rect = new createjs.Shape();
     rect.posX = coord[0];
     rect.posY = coord[1];
-    rect.col = coord[0] / w;
-    rect.row = coord[1] / h;
-    rect.graphics.beginFill('rgba(92, 165, 225, .6)').drawRect(coord[0], coord[1], w - 1, h - 1);
+    rect.col = coord[0] / xCalc;
+    rect.row = coord[1] / yCalc;
+    rect.graphics.beginFill('rgba(92, 165, 225, .6)').drawRect(coord[0], coord[1], xCalc - 1, yCalc - 1);
+    rect.addEventListener('click', function(e) {
+      handleRectClick(rect, e, c);
+    });
     bg.addChild(rect);
-    console.log(rect);
+    bg.setChildIndex(rect, 1);
   });
   bg.update();
 }
 
+function handleRectClick(rect, e, c) {
+  var targetCol = rect.col;
+  var targetRow = rect.row;
+
+  var colDiff = targetCol - hero.col;
+  var rowDiff = targetRow - hero.row;
+
+  handleMovement(colDiff, rowDiff, c);
+}
+
+function handleMovement(x, y, c) {
+  console.log(c);
+  moveX(x, c, function() {
+    moveY(y, c);
+  });
+
+  if(y > 0) {
+    // move down
+    for(var i=1; i<=y; i++) {
+      c.y = rowsToPixels(c.row + i);
+
+      bg.update();
+    }
+  } else {
+    // move up
+    for(var i=1; i<=Math.abs(y); i++) {
+      c.y = rowsToPixels(c.row - i);
+
+      bg.update();
+    }
+  }
+}
+
+function moveX(x, c, cb) {
+  if(x > 0) {
+    // move right
+    for(var i=1; i<=x; i++) {
+      c.x = colsToPixels(c.col + i);
+
+      bg.update();
+    }
+  } else {
+    // move left
+    for(var i = 1; i <= Math.abs(x); i++) {
+      c.x = colsToPixels(c.col - i);
+      bg.update();
+    }
+  }
+  return cb;
+}
+
 function setBackground(path) {
   var bitmap = new createjs.Bitmap(path);
-  bitmap.scaleX = scale;
-  bitmap.scaleY = scale;
+  _scale(bitmap);
   bg.addChild(bitmap);
+  bg.setChildIndex(bitmap, -1);
 }
 
 function buildImage(path, data, action, cb) {
@@ -339,11 +348,10 @@ function createSpriteAnimation(ss, action, data) {
   window[data.wid] = new createjs.Sprite(ss);
   window[data.wid].wid = data.wid;
   window[data.wid].mv = data.mv;
-  sprite = window[data.wid];
+  var sprite = window[data.wid];
   sprite.y = data.posY ? data.posY : 0;
   sprite.x = data.posX ? data.posX : 0;
-  sprite.scaleX = scaleB;
-  sprite.scaleY = scaleB;
+  _scale(sprite, scaleB);
   stage.addChild(sprite);
   renderDisplay(sprite);
   sprite.gotoAndStop(0);
@@ -351,105 +359,27 @@ function createSpriteAnimation(ss, action, data) {
 
 function createOverworld(ss, action, data) {
   var owChar = new createjs.Sprite(ss, action);
-  var gridX = 240 / 15;
-  var gridY = 160 / 10;
-  gridX = xStart / 15; // 240 * 1.5 = 360
-  gridY = yStart / 10;
-  owChar.scaleX = scale;
-  owChar.scaleY = scale;
+  _scale(owChar);
   if(data.posCol !== undefined && data.posRow !== undefined) {
-    owChar.x = gridX * (data.posCol - 1);
-    owChar.y = gridY * (data.posRow - 1);
+    owChar.x = colsToPixels(data.posCol - 1);
+    owChar.y = rowsToPixels(data.posRow - 1);
   }
-  owChar.addEventListener('click', handleStageClick);
+  owChar.addEventListener('click', function(e) {
+    if(moveCache.length === 0) {
+      handleStageClick(owChar, e);
+    }
+  });
   console.log(owChar);
   bg.addChild(owChar);
+  bg.setChildIndex(owChar, 2);
   bg.update();
+  if(moveCache.length !== 0) {
+    drawMoveRects(moveCache);
+  }
   owChar.gotoAndPlay('idle');
   window.setInterval(function() {
     bg.update();
   }, 1000);
-}
-
-function playSprite() {
-  lyn.gotoAndPlay('start');
-  createjs.Ticker.addEventListener("tick", function() {
-    renderDisplay(lyn);
-  });
-}
-
-function playSprite2() {
-  if(brigand.currentFrame === 0) {
-    brigand.gotoAndPlay('attack');
-  } else {
-    brigand.gotoAndPlay(brigand.currentFrame);
-  }
-  createjs.Ticker.addEventListener("tick", function() {
-    if(brigand.currentFrame == 4) {
-      brigand.y = -10;
-      brigand.x = 80;
-    } else if(brigand.currentFrame == 5) {
-      brigand.x = 140;
-    } else if(brigand.currentFrame == 6) {
-      brigand.x = 190;
-    } else if(brigand.currentFrame == 7 || brigand.currentFrame == 8) {
-      brigand.x = 190;
-      brigand.y = 15;
-    } else if(brigand.currentFrame == 9) {
-      brigand.x = 150;
-      brigand.y = -5;
-    } else if(brigand.currentFrame == 10) {
-      brigand.x = 120;
-      brigand.y = -15;
-    } else if(brigand.currentFrame == 11) {
-      brigand.x = 90;
-      brigand.y = -15;
-    } else {
-      brigand.x = 70;
-      brigand.y = 25;
-    }
-    renderDisplay(brigand);
-  });
-}
-
-function stopSprite(action, obj) {
-  sprite = obj ? obj : sprite;
-  sprite.gotoAndStop(0);
-  stage.update(lyn);
-}
-
-function stopSprite2() {
-  brigand.gotoAndStop(brigand.currentFrame);
-  renderDisplay(brigand);
-}
-
-function plusFrame(c) {
-  var char = window[c];
-  char.gotoAndStop(char.currentFrame);
-  char.currentFrame = char.currentFrame + 1;
-  char.gotoAndStop(char.currentFrame);
-  renderDisplay(char);
-}
-
-function minusFrame(c) {
-  var char = window[c];
-  char.gotoAndStop(char.currentFrame);
-  char.currentFrame = char.currentFrame - 1;
-  char.gotoAndStop(char.currentFrame);
-  renderDisplay(char);
-}
-
-function renderDisplay(c) {
-  var fd = document.getElementById(c.wid + '-current-frame');
-  var xd = document.getElementById(c.wid + '-x-offset');
-  var yd = document.getElementById(c.wid + '-y-offset');
-  fd.textContent = c.currentFrame;
-  modifyLynX(c.currentFrame);
-  if(xd.value.length === 0 && yd.value.length === 0) {
-    xd.value = c.x;
-    yd.value = c.y;
-  }
-  stage.update();
 }
 
 function modifyLynX(f) {
@@ -472,36 +402,30 @@ function modifyLynX(f) {
   return;
 }
 
-function handleYOffsetChange(e, c) {
-  window[c].y = e.value;
-  renderDisplay(window[c]);
+function _scale(item, s) {
+  s = s ? s : scale;
+  item.scaleX = s;
+  item.scaleY = s;
 }
 
-function handleXOffsetChange(e, c) {
-  window[c].x = e.value;
-  renderDisplay(window[c]);
+function rowsToPixels(r) {
+  // pixels per row
+  var yCalc = yStart / 10;
+
+  return yCalc * r;
 }
 
-function handleImageLoad(e) {
-  console.log('Image Loaded:');
-  console.log(e);
+function pixelsToRows(p) {
+  return Math.floor(p / yCalc);
 }
 
-function handleImageError(e) {
-  console.error('Image Error');
-  console.log(e);
+function colsToPixels(c) {
+  // pixels per col
+  var xCalc = xStart / 15;
+
+  return xCalc * c;
 }
 
-function drawCircle() {
-  var circle = new createjs.Shape();
-  // drawCircle(x, y, radius)
-  circle.graphics.beginFill('DeepSkyBlue').drawCircle(0, 0, 50);
-  circle.x = 100;
-  circle.y = 100;
-  stage.addChild(circle);
-  renderStage();
-}
-
-function renderStage() {
-  stage.update();
+function pixelsToCols(p) {
+  return Math.floor(p / xCalc);
 }

@@ -6,7 +6,8 @@ var gulp 			= require('gulp'),
 	autoprefixer 	= require('gulp-autoprefixer'),
 	rename 			= require('gulp-rename'),
 	include 		= require('gulp-include'),
-	livereload		= require('gulp-livereload');
+	livereload		= require('gulp-livereload'),
+	babel					= require('gulp-babel');
 	// watch 			= require('gulp-watch');
 
 
@@ -36,6 +37,9 @@ var jsTask = function(options) {
 			console.log('Building JS Bundle');
 			gulp.src(options.src)
 				.pipe(include())
+				.pipe(babel({
+            presets: ['es2015']
+        }))
 				.pipe(rename('project.min.js'))
 				.pipe(gulp.dest(options.dest))
 				.pipe(livereload())
