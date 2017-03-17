@@ -1,6 +1,6 @@
-<canvas id="bg" width="240" height="160"></canvas>
-<br />
 <canvas id="main" width="240" height="160"></canvas>
+<br />
+<canvas id="battle" width="240" height="160"></canvas>
 <div style="width: 360px; display: flex;">
   <div style="flex:1;">
     <button onclick="playSprite2()" style="float: left;">Play 2</button>

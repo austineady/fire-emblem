@@ -42,7 +42,7 @@ function playSprite2() {
 function stopSprite(action, obj) {
   sprite = obj ? obj : sprite;
   sprite.gotoAndStop(0);
-  stage.update(lyn);
+  battle.update(lyn);
 }
 
 function stopSprite2() {
@@ -86,5 +86,25 @@ function renderDisplay(c) {
     xd.value = c.x;
     yd.value = c.y;
   }
-  stage.update();
+  battle.update();
+}
+
+function modifyLynX(f) {
+  switch(f) {
+    case 4:
+      lyn.x = 200;
+      break;
+    case 5:
+      lyn.x = 170;
+      break;
+    case 6:
+    case 7:
+    case 8:
+      lyn.x = 200;
+      break;
+    default:
+      lyn.x = 230;
+      break;
+  }
+  return;
 }
