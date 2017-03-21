@@ -59,6 +59,7 @@ function createMoveMap(mv, col, row, c) {
 }
 
 function drawMoveRects(arr, c) {
+  fe.moveContainer = new createjs.Container();
   arr.forEach(function(coord) {
     var rect = new createjs.Shape();
     rect.posX = coord[0];
@@ -69,9 +70,10 @@ function drawMoveRects(arr, c) {
     rect.addEventListener('click', function(e) {
       handleRectClick(rect, e, c);
     });
-    main.addChild(rect);
-    main.setChildIndex(rect, 1);
+    fe.moveContainer.addChild(rect);
   });
+  main.addChild(fe.moveContainer);
+  main.setChildIndex(fe.moveContainer, 1);
   main.update();
 }
 

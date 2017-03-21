@@ -5,7 +5,8 @@
   var fe = {};
 
   window.fe = window.fe || fe;
-
+  fe.characterSelected = false;
+  fe.arrowStart = [];
   // Base Includes
   //=require utility.js
   //=require functions.js
@@ -23,7 +24,8 @@
       battle = fe.battle = {},
       hero = fe.hero = {},
       moveCache = fe.moveCache = [],
-      metrics = fe.metrics = {};
+      metrics = fe.metrics = {},
+      selector = fe.selector = {};
 
   var ratio = fe.metrics.ratio = 1.5,
       scale = fe.metrics.scale = 2,
@@ -175,6 +177,7 @@
             }
             selector.y = rowsToPixels(selector.row);
             fe.render(main);
+            renderArrow(selector.col, selector.row, 0);
             break;
           case 39:
             // Arrow Right
@@ -185,6 +188,7 @@
             }
             selector.x = colsToPixels(selector.col);
             fe.render(main);
+            renderArrow(selector.col, selector.row, 90);
             break;
           case 40:
             // Arrow Down
@@ -193,8 +197,9 @@
             } else {
               selector.row = selector.row;
             }
-            selector.y = rowsToPixels(selector.row);
+            selector.x = colsToPixels(selector.col);
             fe.render(main);
+            renderArrow(selector.col, selector.row, 180);
             break;
           case 37:
             // Arrow Left
@@ -205,10 +210,12 @@
             }
             selector.x = colsToPixels(selector.col);
             fe.render(main);
+            renderArrow(selector.col, selector.row, -90);
             break;
           case 32:
             // Spacebar
             if(lyn.row === selector.row + 1 && lyn.col === selector.col + 1 && moveCache.length === 0) {
+              fe.characterSelected = true;
               createMoveMap(5, lyn.col - 1, lyn.row - 1, lyn);
             }
             break;
@@ -220,6 +227,27 @@
       selector.gotoAndPlay(0);
       selector.x = colsToPixels(selector.col);
       selector.y = rowsToPixels(selector.row);
+      fe.arrowStart = [selector.x, selector.y];
     };
+  }
+
+  function renderArrow(x, y, rot) {
+    var img = new Image();
+    img.src = 'assets/images/overworld/arrow-head.png';
+    img.onload = function() {
+      var data = {
+        images: [img],
+        frames: {width: 16, height: 16, count: 1, regX: 0, regY: 0}
+      }
+      var ss = new createjs.SpriteSheet(data);
+      var arrow = new createjs.Sprite(ss);
+      _scale(arrow);
+      fe.moveContainer.addChild(arrow);
+      arrow.x = colsToPixels(x);
+      arrow.y = rowsToPixels(y);
+      arrow.rotation = rot;
+      fe.render(main);
+      arrow.gotoAndPlay(0);
+    }
   }
 })();
