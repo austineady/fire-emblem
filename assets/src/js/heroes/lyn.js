@@ -1,8 +1,12 @@
 'use strict';
 
-function Lyn() {
-  this.row = 9;
-  this.col = 14;
+function Lyn(col, row) {
+  this.row = row || 9;
+  this.col = col || 14;
+  this.mv = 5;
+  this.builder = function(col, row) {
+    return new Lyn(col, row);
+  },
   this.src = 'assets/images/overworld/overworld-characters-clean.png';
   // image to use
   this.images = [];

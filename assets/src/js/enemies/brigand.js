@@ -1,7 +1,10 @@
-function Brigand() {
+function Brigand(col, row) {
   this.wid = 'brigand';
-  this.row = 3;
-  this.col = 4;
+  this.row = row || 3;
+  this.col = col || 4;
+  this.builder = function(col, row) {
+    return new Brigand(col, row);
+  }
   this.src = 'assets/images/animations/enemy/brigand-clean.png';
   this.mv = 4;
   this.images = [];

@@ -27,6 +27,14 @@ var pageTask = function() {
 	gulp.watch(['*/**/*.php', '*/.php', '*.php', '*.html']).on('change', function(file) {
 		livereload.changed(file.path);
 	});
+
+	gulp.watch(['assets/src/js/**/*.js', 'assets/src/js/*.js']).on('change', function() {
+		jsTask({
+			development: true,
+			src: './assets/src/js/project.js',
+			dest: './assets/build/js'
+		});
+	});
 }
 
 // Compile JS Functions and Project.js to project.min.js
@@ -36,12 +44,7 @@ var jsTask = function(options) {
 			var start = new Date();
 			console.log('Building JS Bundle');
 			gulp.src(options.src)
-				.pipe(include({
-					extensions: "js",
-					includePaths: [
-						__dirname + "/assets/src/js"
-					]
-				}))
+				.pipe(include())
 				.pipe(rename('project.min.js'))
 				.pipe(gulp.dest(options.dest))
 				.pipe(livereload())

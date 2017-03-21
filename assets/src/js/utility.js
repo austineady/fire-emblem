@@ -40,4 +40,26 @@ fe.render = function(stage, child) {
   }
 
   stage.update();
+  return;
+}
+
+fe.update = function(stage, child) {
+  child.x = colsToPixels(child.col);
+  child.y = rowsToPixels(child.row);
+
+  stage.update();
+  return;
+}
+
+fe.renderChild = function(container, child) {
+  if(child.col !== undefined && child.row !== undefined) {
+    child.x = colsToPixels(child.col - 1);
+    child.y = rowsToPixels(child.row - 1);
+  }
+  if(child.index !== undefined) {
+    container.setChildIndex(child, 2);
+  }
+
+  container.addChild(child);
+  return;
 }

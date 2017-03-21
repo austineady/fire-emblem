@@ -6,11 +6,17 @@
 
   window.fe = window.fe || fe;
   fe.characterSelected = false;
+  fe.heroSelected = undefined;
   fe.arrowStart = [];
+  fe.registry = {};
   // Base Includes
   //=require utility.js
   //=require functions.js
   //=require ui-functions.js
+  //=require functions/event-handlers.js
+  //=require functions/movement.js
+  //=require functions/selector.js
+
 
   // Hero Includes
   //=require characters.js
@@ -20,7 +26,8 @@
       hero = fe.hero = {},
       moveCache = fe.moveCache = [],
       metrics = fe.metrics = {},
-      selector = fe.selector = {};
+      selector = fe.selector = {},
+      arrowHead = fe.arrowHead = {};
 
   var totalRows = fe.totalRows = 10,
       totalCols = fe.totalCols = 15,
@@ -75,6 +82,12 @@
     })
   }
 
+  function register(c) {
+    var gr = fe.registry;
+
+    gr[c.col + ', ' + c.row] = c;
+  }
+
   function setBackground(path) {
     var bitmap = new createjs.Bitmap(path);
     _scale(bitmap);
@@ -82,13 +95,13 @@
     main.setChildIndex(bitmap, -1);
   }
 
-  function buildSheet(data) {
+  function buildSheet(character) {
     return new Promise(function(resolve, reject) {
       var img = new Image();
-      img.src = data.src;
+      img.src = character.src;
       img.onload = function() {
-        data.images.push(img);
-        var ss = new createjs.SpriteSheet(data);
+        character.images.push(img);
+        var ss = new createjs.SpriteSheet(character);
         resolve(ss);
       };
       img.onerror = function(err) {
@@ -97,120 +110,49 @@
     })
   }
 
-  function buildImage(path, data, action, cb) {
+  function buildImage(path, character, action, cb) {
     var img = new Image();
     img.src = path;
     img.onload = function() {
-      createSpriteSheet(img, data, action, cb);
+      createSpriteSheet(img, character, action, cb);
     };
   }
 
-  function createSpriteSheet(img, data, action, cb) {
-    data.images.push(img);
-    var ss = new createjs.SpriteSheet(data);
-    cb(ss, action, data);
+  function createSpriteSheet(img, character, action, cb) {
+    character.images.push(img);
+    var ss = new createjs.SpriteSheet(character);
+    cb(ss, action, character);
   }
 
-  function createOverworld(ss, action, data) {
-    var owChar = new createjs.Sprite(ss, action);
-    _scale(owChar);
-    if(data.col !== undefined && data.row !== undefined) {
-      owChar.col = data.col;
-      owChar.row = data.row;
-    }
-    owChar.index = 2;
-    owChar.addEventListener('click', function(e) {
+  function createOverworld(ss, action, character) {
+    character.sheet = ss;
+    character.sprite = new createjs.Sprite(ss, action);
+    character.sprite.cid = character.wid;
+    character.sprite.mv = character.mv;
+    character.sprite.builder = character.builder;
+    character.sprite.col = character.col;
+    character.sprite.row = character.row;
+    character.sprite.index = 2;
+    _scale(character.sprite);
+    character.sprite.addEventListener('click', function(e) {
       if(moveCache.length === 0) {
-        handleStageClick(owChar, e);
+        handleStageClick(character, e);
       }
     });
-    console.log(owChar);
-    fe.render(main, owChar);
+    register(character.sprite);
+    console.log(character.sprite);
+    fe.render(main, character.sprite);
 
     if(moveCache.length !== 0) {
       drawMoveRects(moveCache);
     }
     if(action !== 0) {
-      owChar.gotoAndPlay('idle');
+      character.sprite.gotoAndPlay('idle');
       window.setInterval(function() {
         fe.render(main);
       }, 1000);
     }
   } // end createOverworld
-
-  function createSelector() {
-    var cw = main.canvas.clientWidth;
-    var ch = main.canvas.clientHeight;
-    var img = new Image();
-    img.src = 'assets/images/overworld/overworld-select.png';
-    img.onload = function() {
-      var data = {
-        row: 9,
-        col: 14,
-        images: [img],
-        frames: {width: 24, height: 24, count: 2, regX: 0, regY: 0}
-      }
-      var ss = new createjs.SpriteSheet(data);
-      var selector = new createjs.Sprite(ss);
-      selector.row = data.row;
-      selector.col = data.col;
-      document.addEventListener('keydown', function(e) {
-        switch(e.keyCode) {
-          case 38:
-            // Arrow Up
-            if(selector.row - 1 >= 0) {
-              selector.row = selector.row - 1;
-            } else {
-              selector.row = selector.row;
-            }
-            fe.render(main, selector);
-            renderArrow(selector.col, selector.row, 0);
-            break;
-          case 39:
-            // Arrow Right
-            if(selector.col + 1 <= totalCols) {
-              selector.col = selector.col + 1;
-            } else {
-              selector.col = selector.col;
-            }
-            fe.render(main, selector);
-            renderArrow(selector.col, selector.row, 90);
-            break;
-          case 40:
-            // Arrow Down
-            if(selector.row + 1 <= totalRows) {
-              selector.row = selector.row + 1;
-            } else {
-              selector.row = selector.row;
-            }
-            fe.render(main, selector);
-            renderArrow(selector.col, selector.row, 180);
-            break;
-          case 37:
-            // Arrow Left
-            if(selector.col - 1 >= 0) {
-              selector.col = selector.col - 1;
-            } else {
-              selector.col = selector.col;
-            }
-            fe.render(main, selector);
-            renderArrow(selector.col, selector.row, -90);
-            break;
-          case 32:
-            // Spacebar
-            if(lyn.row === selector.row && lyn.col === selector.col && moveCache.length === 0) {
-              fe.characterSelected = true;
-              createMoveMap(5, lyn.col, lyn.row, lyn);
-            }
-            break;
-        }
-      })
-      _scale(selector, scaleB);
-      fe.render(main, selector);
-      selector.gotoAndPlay(0);
-      fe.arrowStart = [selector.x, selector.y];
-    };
-  }
 
   function renderArrow(x, y, rot) {
     var img = new Image();
@@ -223,10 +165,26 @@
       var ss = new createjs.SpriteSheet(data);
       var arrow = new createjs.Sprite(ss);
       _scale(arrow);
-      fe.moveContainer.addChild(arrow);
-      arrow.x = colsToPixels(x);
-      arrow.y = rowsToPixels(y);
+      if(!arrowHead.length) {
+        arrowHead = arrow;
+      }
+      if(arrowHead.col === undefined) {
+        arrowHead.col = selector.col;
+      } else {
+        arrow.col = arrowHead.col + x;
+      }
+
+      if(arrowHead.row === undefined) {
+        arrowHead.row = selector.row;
+      } else {
+        arrow.row = arrowHead.row + y;
+      }
+      console.log(arrow);
+      arrow.col = selector.col;
+      arrow.row = selector.row;
+      arrow.index = 3;
       arrow.rotation = rot;
+      fe.renderChild(main, arrow);
       fe.render(main);
       arrow.gotoAndPlay(0);
     }
