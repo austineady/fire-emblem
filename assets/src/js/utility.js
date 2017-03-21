@@ -26,6 +26,18 @@ function pixelsToCols(p) {
   return Math.floor(p / pxPerCol);
 }
 
-fe.render = function(stage) {
+fe.render = function(stage, child) {
+  if(child) {
+    if(child.col !== undefined && child.row !== undefined) {
+      child.x = colsToPixels(child.col - 1);
+      child.y = rowsToPixels(child.row - 1);
+    }
+    if(child.index !== undefined) {
+      stage.setChildIndex(child, 2);
+    }
+
+    stage.addChild(child);
+  }
+
   stage.update();
 }

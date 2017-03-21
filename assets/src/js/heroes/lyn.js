@@ -1,8 +1,6 @@
 'use strict';
 
 function Lyn() {
-  this.posRow = 9;
-  this.posCol = 14;
   this.row = 9;
   this.col = 14;
   this.src = 'assets/images/overworld/overworld-characters-clean.png';

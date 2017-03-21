@@ -1,5 +1,6 @@
 // Functions
-
+//=require functions/event-handlers.js
+//=require functions/movement.js
 
 function handleImageLoad(e) {
   console.log('Image Loaded:');

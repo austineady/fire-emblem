@@ -1,7 +1,29 @@
 <canvas id="main" width="240" height="160"></canvas>
-<br />
-<canvas id="battle" width="240" height="160"></canvas>
 <div style="width: 360px; display: flex;">
+  <div style="flex:1;">
+    Selected Character: <span id="hero"></span>
+  </div>
+
+  <div style="flex:1;">
+    isMoving: <span id="moving"></span>
+  </div>
+</div>
+<br />
+<div style="width: 360px; display: flex;">
+  <div style="flex:1;">
+    Selector X<input id="selector-x" type="text"></input>
+    Selector Y<input id="selector-y" type="text"></input>
+  </div>
+
+  <div style="flex:1;">
+    Selector Col<input id="selector-col" type="text"></input>
+    Selector Row<input id="selector-row" type="text"></input>
+  </div>
+</div>
+
+<canvas id="battle" width="240" height="160"></canvas>
+
+<!-- <div style="width: 360px; display: flex;">
   <div style="flex:1;">
     <button onclick="playSprite2()" style="float: left;">Play 2</button>
     <button onclick="stopSprite2()" style="float: left;">Stop 2</button>
@@ -34,4 +56,4 @@
 
     <h5>Y Offset: <input type="number" onchange="handleYOffsetChange(this, 'lyn')" onclick="handleYOffsetChange(this, 'lyn')" id="lyn-y-offset" value=""></h5>
   </div>
-</div>
+</div> -->

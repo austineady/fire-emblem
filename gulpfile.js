@@ -36,10 +36,12 @@ var jsTask = function(options) {
 			var start = new Date();
 			console.log('Building JS Bundle');
 			gulp.src(options.src)
-				.pipe(include())
-				.pipe(babel({
-            presets: ['es2015']
-        }))
+				.pipe(include({
+					extensions: "js",
+					includePaths: [
+						__dirname + "/assets/src/js"
+					]
+				}))
 				.pipe(rename('project.min.js'))
 				.pipe(gulp.dest(options.dest))
 				.pipe(livereload())

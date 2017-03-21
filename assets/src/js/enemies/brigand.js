@@ -1,7 +1,7 @@
 function Brigand() {
   this.wid = 'brigand';
-  this.posRow = 3;
-  this.posCol = 4;
+  this.row = 3;
+  this.col = 4;
   this.src = 'assets/images/animations/enemy/brigand-clean.png';
   this.mv = 4;
   this.images = [];

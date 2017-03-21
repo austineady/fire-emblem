@@ -11,14 +11,9 @@
   //=require utility.js
   //=require functions.js
   //=require ui-functions.js
-  //=require functions/event-handlers.js
-  //=require functions/movement.js
 
   // Hero Includes
-  //=require heroes/lyn.js
-  //=require enemies/brigand.js
-
-  // var tanaPath = 'sprites/tana_pegasus_knight_lance_long.png';
+  //=require characters.js
 
   var main = fe.main = {},
       battle = fe.battle = {},
@@ -27,28 +22,47 @@
       metrics = fe.metrics = {},
       selector = fe.selector = {};
 
-  var ratio = fe.metrics.ratio = 1.5,
+  var totalRows = fe.totalRows = 10,
+      totalCols = fe.totalCols = 15,
+      canvasWidth = fe.canvasWidth = 240,
+      ratio = fe.metrics.ratio = 1.5,
       scale = fe.metrics.scale = 2,
-      scaleB = fe.metrics.scaleB = 1.5,
-      xStartB = fe.metrics.xStartB = 240 * scaleB,
+      scaleB = fe.metrics.scaleB = 1.5;
+
+  var xStartB = fe.metrics.xStartB = canvasWidth * scaleB,
       yStartB = fe.metrics.yStartB = xStartB / ratio,
-      xStart = fe.metrics.xStart = 240 * scale,
+      xStart = fe.metrics.xStart = canvasWidth * scale,
       yStart = fe.metrics.yStart = xStart / ratio,
-      pxPerCol = fe.pxPerCol = xStart / 15,
-      pxPerRow = fe.pxPerRow = yStart / 10,
-      brigand = new Brigand(),
-      lyn = new Lyn();
+      pxPerCol = fe.pxPerCol = xStart / totalCols,
+      pxPerRow = fe.pxPerRow = yStart / totalRows;
+
+  var mainBg = 'assets/images/background/bg-map-1.png';
+
 
   document.onload = createStage();
 
   function createStage() {
-    var mainBg = 'assets/images/background/bg-map-1.png';
     var me = document.getElementById('main');
     me.width = xStart;
     me.height = yStart;
     main = new createjs.Stage('main');
 
     setBackground(mainBg);
+    createOverworldCharacters();
+    createSelector();
+    owDebug();
+  };
+
+  function owDebug(x, y, col, row) {
+    var paramList = [x, y, col, row];
+    var idList = ['selector-x', 'selector-y', 'selector-col', 'selector-row'];
+    for(var i=0;i<idList.length;i++) {
+      var el = document.getElementById(idList[i]);
+      el.textContent = paramList[i];
+    }
+  }
+
+  function createOverworldCharacters() {
     buildSheet(lyn).then(function(ss) {
       createOverworld(ss, 'idle', lyn);
     }, function(error) {
@@ -59,18 +73,6 @@
     }, function(error) {
       console.error(error);
     })
-    createSelector();
-    createBattleStage();
-  };
-
-  function createBattleStage() {
-    var be = document.getElementById('battle');
-    be.width = xStartB;
-    be.height = yStartB;
-    battle = new createjs.Stage('battle');
-
-    buildImage(lyn.battle.src, lyn.battle, 'start', createSpriteAnimation);
-    buildImage(brigand.ss, brigand.battle, 'attack', createSpriteAnimation);
   }
 
   function setBackground(path) {
@@ -109,36 +111,22 @@
     cb(ss, action, data);
   }
 
-  function createSpriteAnimation(ss, action, data) {
-    window[data.wid] = new createjs.Sprite(ss);
-    window[data.wid].wid = data.wid;
-    window[data.wid].mv = data.mv;
-    var sprite = window[data.wid];
-    sprite.y = data.posY ? data.posY : 0;
-    sprite.x = data.posX ? data.posX : 0;
-    _scale(sprite, scaleB);
-    battle.addChild(sprite);
-    renderDisplay(sprite);
-
-    sprite.gotoAndStop(0);
-  }
-
   function createOverworld(ss, action, data) {
     var owChar = new createjs.Sprite(ss, action);
     _scale(owChar);
     if(data.col !== undefined && data.row !== undefined) {
-      owChar.x = colsToPixels(data.col - 1);
-      owChar.y = rowsToPixels(data.row - 1);
+      owChar.col = data.col;
+      owChar.row = data.row;
     }
+    owChar.index = 2;
     owChar.addEventListener('click', function(e) {
       if(moveCache.length === 0) {
         handleStageClick(owChar, e);
       }
     });
     console.log(owChar);
-    main.addChild(owChar);
-    main.setChildIndex(owChar, 2);
-    fe.render(main);
+    fe.render(main, owChar);
+
     if(moveCache.length !== 0) {
       drawMoveRects(moveCache);
     }
@@ -148,7 +136,7 @@
         fe.render(main);
       }, 1000);
     }
-  }
+  } // end createOverworld
 
   function createSelector() {
     var cw = main.canvas.clientWidth;
@@ -157,8 +145,8 @@
     img.src = 'assets/images/overworld/overworld-select.png';
     img.onload = function() {
       var data = {
-        row: 8,
-        col: 13,
+        row: 9,
+        col: 14,
         images: [img],
         frames: {width: 24, height: 24, count: 2, regX: 0, regY: 0}
       }
@@ -170,63 +158,56 @@
         switch(e.keyCode) {
           case 38:
             // Arrow Up
-            if(rowsToPixels(selector.row - 1) >= 0) {
+            if(selector.row - 1 >= 0) {
               selector.row = selector.row - 1;
             } else {
               selector.row = selector.row;
             }
-            selector.y = rowsToPixels(selector.row);
-            fe.render(main);
+            fe.render(main, selector);
             renderArrow(selector.col, selector.row, 0);
             break;
           case 39:
             // Arrow Right
-            if(colsToPixels(selector.col + 1) <= colsToPixels(14)) {
+            if(selector.col + 1 <= totalCols) {
               selector.col = selector.col + 1;
             } else {
               selector.col = selector.col;
             }
-            selector.x = colsToPixels(selector.col);
-            fe.render(main);
+            fe.render(main, selector);
             renderArrow(selector.col, selector.row, 90);
             break;
           case 40:
             // Arrow Down
-            if(rowsToPixels(selector.row + 1) <= rowsToPixels(9)) {
+            if(selector.row + 1 <= totalRows) {
               selector.row = selector.row + 1;
             } else {
               selector.row = selector.row;
             }
-            selector.x = colsToPixels(selector.col);
-            fe.render(main);
+            fe.render(main, selector);
             renderArrow(selector.col, selector.row, 180);
             break;
           case 37:
             // Arrow Left
-            if(colsToPixels(selector.col - 1) >= 0) {
+            if(selector.col - 1 >= 0) {
               selector.col = selector.col - 1;
             } else {
               selector.col = selector.col;
             }
-            selector.x = colsToPixels(selector.col);
-            fe.render(main);
+            fe.render(main, selector);
             renderArrow(selector.col, selector.row, -90);
             break;
           case 32:
             // Spacebar
-            if(lyn.row === selector.row + 1 && lyn.col === selector.col + 1 && moveCache.length === 0) {
+            if(lyn.row === selector.row && lyn.col === selector.col && moveCache.length === 0) {
               fe.characterSelected = true;
-              createMoveMap(5, lyn.col - 1, lyn.row - 1, lyn);
+              createMoveMap(5, lyn.col, lyn.row, lyn);
             }
             break;
         }
       })
-      main.addChild(selector);
       _scale(selector, scaleB);
-      fe.render(main);
+      fe.render(main, selector);
       selector.gotoAndPlay(0);
-      selector.x = colsToPixels(selector.col);
-      selector.y = rowsToPixels(selector.row);
       fe.arrowStart = [selector.x, selector.y];
     };
   }
