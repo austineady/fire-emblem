@@ -23,7 +23,9 @@ function createSelector() {
 }
 
 function bindSelector() {
+  bg.addEventListener('click', handleStageClick);
   document.addEventListener('keydown', function(e) {
+    //stopLoop();
     switch(e.keyCode) {
       case 38:
         // Arrow Up
@@ -91,38 +93,46 @@ function bindSelector() {
         }
         break;
     }
-    if(fe.registry[selector.col + ', ' + selector.row] !== undefined) {
-      fe.hoverSelect = fe.registry[selector.col + ', ' + selector.row];
-      console.log("Select Hover Event:");
-      console.log(fe.hoverSelect);
-      if(fe.hoverSelect.hud) {
-        displayHud(fe.hoverSelect);
-      }
-    } else {
-      fe.hoverSelect = undefined;
-    }
+    handleSelector();
     _scale(selector, scaleB);
     fe.render(main, selector);
     selector.gotoAndPlay(0);
   })
+
+  document.addEventListener('keyup', function(e) {
+    //startLoop();
+  });
 }
 
-function displayHud(c) {
-  var hud = new createjs.Container();
-  var name = new createjs.Text(c.hud.nameDisplay, '400 20px Quicksand, sans-serif', 'rgba(40, 44, 52, 1.00)');
-  var g = new createjs.Graphics().setStrokeStyle(2).beginStroke('rgba(225, 239, 238, 1.00)').beginFill('rgba(171, 193, 223, .9)').drawRoundRect(0, 0, 100, 34, 5, 5, 5, 5);
-  var hudBg = new createjs.Shape(g);
-  _scale(hudBg);
-  var hudImg = Mugshot(c.hud.mugshot);
-  console.log(hudImg);
-  hudImg.x = 4;
-  hudImg.y = 2;
-  hud.x = pxPerCol / 2;
-  hud.y = pxPerRow / 2;
-  name.x = pxPerCol * 2.5;
-  name.y = 10;
-  hud.addChild(hudBg);
-  hud.addChild(hudImg);
-  hud.addChild(name);
-  fe.render(main, hud);
+function handleStageClick(e) {
+  selector.col = pixelsToCols(e.stageX);
+  selector.row = pixelsToRows(e.stageY);
+  fe.update(main, selector);
+  handleSelector();
+}
+
+function handleSelector() {
+  if(selector.row < totalRows / 2 && !fe.hudBottom) {
+    fe.hudBottom = true;
+  } else if(selector.row >= totalRows / 2 && fe.hudBottom) {
+    fe.hudBottom = false;
+  }
+  if(fe.registry[selector.col + ', ' + selector.row] !== undefined) {
+    fe.hoverSelect = fe.registry[selector.col + ', ' + selector.row];
+    console.log("Select Hover Event:");
+    console.log(fe.hoverSelect);
+    if(fe.hoverSelect.hud) {
+      console.log("Hud Activated");
+      if(!fe.hudActive) {
+        displayHud(fe.hoverSelect);
+      }
+    }
+  } else {
+    fe.hoverSelect = undefined;
+    if(fe.hudActive) {
+      console.log("Hud Deactivated");
+      removeHud();
+    }
+  }
+  return;
 }

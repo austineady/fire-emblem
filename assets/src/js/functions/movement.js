@@ -86,12 +86,11 @@ function drawMoveRects(arr, c) {
   fe.moveContainer = new createjs.Container();
   arr.forEach(function(coord) {
     var rect = new createjs.Shape();
-    rect.col = coord[0] / pxPerCol;
-    rect.row = coord[1] / pxPerRow;
+    rect.col = coord[0] / pxPerCol + 1;
+    rect.row = coord[1] / pxPerRow + 1;
     rect.graphics.beginFill('rgba(92, 165, 225, .6)').drawRect(coord[0], coord[1], pxPerCol - 1, pxPerRow - 1);
-    rect.addEventListener('click', function(e) {
-      handleRectClick(rect, e, c);
-    });
+    rect.empty = true;
+    register(rect);
     fe.moveContainer.addChild(rect);
   });
   main.addChild(fe.moveContainer);
@@ -117,27 +116,35 @@ function drawAtkRects(arr, c) {
 }
 
 function removeMoveMap() {
+  fe.moveContainer.children.forEach(function(child) {
+    unregister(child);
+  });
   main.removeChild(fe.moveContainer);
+  return;
+}
+
+function resetStage() {
   fe.characterSelected = false;
   fe.hoverSelect = fe.heroSelected;
   fe.heroSelected = undefined;
   hero = {};
-  moveCache = [];
   fe.render(main);
-  return;
 }
 
 function calculateMoveSelect() {
   var hero = fe.heroSelected;
   var colMem = hero.col;
   var rowMem = hero.row;
-  hero.col = selector.col;
-  hero.row = selector.row;
-  hero.getMoveMatrix(hero.col, hero.row);
-  fe.render(main, hero);
-  fe.registry[colMem + ', ' + rowMem] = undefined;
-  register(hero);
-  removeMoveMap();
+  if(fe.registry[selector.col + ', ' + selector.row] && fe.registry[selector.col + ', ' + selector.row].empty) {
+    unregister(hero);
+    hero.col = selector.col;
+    hero.row = selector.row;
+    removeMoveMap();
+    register(hero);
+    hero.getMoveMatrix(hero.col, hero.row);
+    fe.render(main, hero);
+    resetStage();
+  }
 }
 
 function handleMovement(x, y, c) {

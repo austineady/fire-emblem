@@ -4,6 +4,9 @@ function Lyn(col, row) {
   this.row = row || 9;
   this.col = col || 14;
   this.mv = 5;
+  this.hpMax = 21;
+  this.hp = this.hpMax;
+  this.lvl = 1;
   this.builder = function(col, row) {
     return new Lyn(col, row);
   },
@@ -19,9 +22,8 @@ function Lyn(col, row) {
   ];
   this.animations = {
     'idle': {
-      frames: [0, 2, 1, 0],
-      next: 'idle',
-      framerate: 2
+      frames: [0, 0, 1, 2, 2, 1, 0, 0],
+      next: 'idle'
     }
   };
   this.hud = {

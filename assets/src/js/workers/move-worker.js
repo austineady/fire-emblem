@@ -2,6 +2,7 @@ onmessage = function(e) {
   // Current character coords
   var col = e.data.col - 1;
   var row = e.data.row - 1;
+  var tMap = e.data.tMap;
   var mv = e.data.mv;
   var pxPerCol = e.data.canvasWidth / e.data.totalCols;
   var pxPerRow = e.data.canvasHeight / e.data.totalRows;
@@ -32,11 +33,11 @@ onmessage = function(e) {
       newItem[0] = (col + item[0]) * pxPerCol;
       newItem[1] = (row + item[1]) * pxPerRow;
       cacheString = newItem[0] + ', ' + newItem[1];
-      if(arrCache.indexOf(cacheString) === -1 && newItem[0] <= cw && newItem[0] >= 0 && newItem[1] <= ch) {
+      if(arrCache.indexOf(cacheString) === -1 && col + item[0] <= e.data.totalCols && col + item[0] >= 0 && row + item[1] <= e.data.totalRows) {
         arrCache.push(cacheString);
-        if(item[0] + item[1] < mvTotal) {
+        if(item[0] + item[1] <= mv) {
           newMatrix.push(newItem);
-        } else {
+        } else if(item[0] + item[1] == mvTotal) {
           atkMatrix.push(newItem);
         }
       }
@@ -44,11 +45,11 @@ onmessage = function(e) {
       newItem[0] = (col - item[0]) * pxPerCol;
       newItem[1] = (row - item[1]) * pxPerRow;
       cacheString = newItem[0] + ', ' + newItem[1];
-      if(arrCache.indexOf(cacheString) === -1 && newItem[0] <= cw && newItem[0] >= 0 && newItem[1] <= ch) {
+      if(arrCache.indexOf(cacheString) === -1 && col - item[0] <= cw && e.data.totalCols >= 0 && row - item[1] <= e.data.totalRows) {
         arrCache.push(cacheString);
-        if(item[0] + item[1] < mvTotal) {
+        if(item[0] + item[1] <= mv) {
           newMatrix.push(newItem);
-        } else {
+        } else if(item[0] + item[1] == mvTotal) {
           atkMatrix.push(newItem);
         }
       }
@@ -56,11 +57,11 @@ onmessage = function(e) {
       newItem[0] = (col + item[0]) * pxPerCol;
       newItem[1] = (row - item[1]) * pxPerRow;
       cacheString = newItem[0] + ', ' + newItem[1];
-      if(arrCache.indexOf(cacheString) === -1 && newItem[0] <= cw && newItem[0] >= 0 && newItem[1] <= ch) {
+      if(arrCache.indexOf(cacheString) === -1 && col + item[0] <= e.data.totalCols && col + item[0] >= 0 && row - item[1] <= e.data.totalRows) {
         arrCache.push(cacheString);
-        if(item[0] + item[1] < mvTotal) {
+        if(item[0] + item[1] <= mv) {
           newMatrix.push(newItem);
-        } else {
+        } else if(item[0] + item[1] == mvTotal) {
           atkMatrix.push(newItem);
         }
       }
@@ -68,19 +69,24 @@ onmessage = function(e) {
       newItem[0] = (col - item[0]) * pxPerCol;
       newItem[1] = (row + item[1]) * pxPerRow;
       cacheString = newItem[0] + ', ' + newItem[1];
-      if(arrCache.indexOf(cacheString) === -1 && newItem[0] <= cw && newItem[0] >= 0 && newItem[1] <= ch) {
+      if(arrCache.indexOf(cacheString) === -1 && col - item[0] <= e.data.totalCols && col - item[0] >= 0 && row + item[1] <= e.data.totalRows) {
         arrCache.push(cacheString);
-        if(item[0] + item[1] < mvTotal) {
+        if(item[0] + item[1] <= mv) {
           newMatrix.push(newItem);
-        } else {
+        } else if(item[0] + item[1] == mvTotal) {
           atkMatrix.push(newItem);
         }
       }
     })
-    post(newMatrix, atkMatrix);
+    var filteredMatrix = newMatrix.filter(function(index) {
+      var newCol = Math.floor(index[0] / pxPerCol);
+      var newRow = Math.floor(index[1] / pxPerRow);
+      if(tMap[newRow] !== undefined && tMap[newRow][newCol] !== undefined && tMap[newRow][newCol] >= 1) {
+        return index;
+      } else {
+        atkMatrix.push(index);
+      }
+    });
+    postMessage([filteredMatrix, atkMatrix, e.data.col, e.data.row]);
   }
-}
-
-function post(m1, m2) {
-  postMessage([m1, m2]);
 }

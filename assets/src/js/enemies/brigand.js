@@ -2,11 +2,14 @@ function Brigand(col, row) {
   this.wid = 'brigand';
   this.row = row || 3;
   this.col = col || 4;
+  this.mv = 5;
+  this.hpMax = 21;
+  this.hp = this.hpMax;
+  this.lvl = 1;
   this.builder = function(col, row) {
     return new Brigand(col, row);
   }
   this.src = 'assets/images/animations/enemy/brigand-clean.png';
-  this.mv = 4;
   this.images = [];
   this.frames = [
     [0, 230, 17, 17],
@@ -15,11 +18,15 @@ function Brigand(col, row) {
   ];
   this.animations = {
     'idle': {
-      frames: [0, 1, 2, 1],
-      next: 'idle',
-      framerate: 2
+      frames: [0, 1, 2, 2, 2, 1, 0, 0],
+      next: 'idle'
     }
   };
+  this.hud = {
+    nameDisplay: "Brigand",
+    nameX: 45,
+    mugshot: [608, 2028, 32, 32]
+  },
   this.battle = {
     wid: 'brigand',
     posX: 150,

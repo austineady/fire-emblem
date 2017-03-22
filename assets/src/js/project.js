@@ -3,12 +3,19 @@
 
   // Base Global Obj
   var fe = {};
-
   window.fe = window.fe || fe;
+
   fe.characterSelected = false;
+  fe.hudActive = false;
+  fe.hudBottom = false;
+  fe.selectorMoving = false;
+
   fe.heroSelected = undefined;
-  fe.arrowStart = [];
+  fe.hud = undefined;
+  fe.int = undefined;
   fe.registry = {};
+  fe.tMap = [];
+
   var mvWorker = new Worker('assets/src/js/workers/move-worker.js');
   // Base Includes
   //=require utility.js
@@ -17,6 +24,8 @@
   //=require functions/event-handlers.js
   //=require functions/movement.js
   //=require functions/selector.js
+  //=require functions/hud.js
+  //=require maps/level-0.js
 
 
   // Hero Includes
@@ -25,7 +34,7 @@
   var main = fe.main = {},
       battle = fe.battle = {},
       hero = fe.hero = {},
-      moveCache = fe.moveCache = [],
+      bg = fe.bg = {},
       metrics = fe.metrics = {},
       selector = fe.selector = {},
       arrowHead = fe.arrowHead = {},
@@ -61,6 +70,15 @@
     createOverworldSheets();
     createSelector();
     owDebug();
+    window.setTimeout(handleSelector, 100);
+    createjs.Ticker.addEventListener("tick", function (event) {
+        // Actions carried out each tick (aka frame)
+        fe.render(main);
+        if (!event.paused) {
+            // Actions carried out when the Ticker is not paused.
+        }
+    });
+    createjs.Ticker.framerate = 4;
   };
 
   function owDebug(x, y, col, row) {
@@ -97,7 +115,6 @@
           ]
         });
         var mugSprite = new createjs.Sprite(mugSS);
-        _scale(mugSprite);
         return mugSprite;
       };
       console.log("Mugshot Constructor Ready");
@@ -106,16 +123,21 @@
   }
 
   function register(c) {
-    var gr = fe.registry;
+    fe.registry[c.col + ', ' + c.row] = c;
+    console.log(fe.registry);
+    return;
+  }
 
-    gr[c.col + ', ' + c.row] = c;
+  function unregister(c) {
+    delete fe.registry[c.col + ', ' + c.row];
+    return;
   }
 
   function setBackground(path) {
-    var bitmap = new createjs.Bitmap(path);
-    _scale(bitmap);
-    main.addChild(bitmap);
-    main.setChildIndex(bitmap, -1);
+    bg = new createjs.Bitmap(path);
+    _scale(bg);
+    main.addChild(bg);
+    main.setChildIndex(bg, -1);
   }
 
   function buildSheet(character) {
@@ -150,51 +172,46 @@
   function createOverworld(ss, action, character) {
     character.sheet = ss;
     character.sprite = new createjs.Sprite(ss, action);
-    character.sprite.getMoveMatrix = function(col, row) {
+    bindCharacterProps(character.sprite, character);
+    character.sprite.index = 2;
+    _scale(character.sprite);
+    register(character.sprite);
+    fe.render(main, character.sprite);
+
+    character.sprite.gotoAndPlay('idle');
+    character.sprite.getMoveMatrix(character.sprite.col, character.sprite.row);
+  } // end createOverworld
+
+  function bindCharacterProps(cs, c) {
+    cs.getMoveMatrix = function(col, row) {
       mvWorker.postMessage({
+        'tMap': fe.tMap,
         'canvasHeight': main.canvas.clientHeight,
         'canvasWidth': main.canvas.clientWidth,
         'totalCols': totalCols,
         'totalRows': totalRows,
-        'mv': character.sprite.mv,
+        'mv': c.mv,
         'col': col,
         'row': row,
         'atk': 1
       });
 
       mvWorker.onmessage = function(e) {
-        character.sprite.moveMap = [e.data[0], e.data[1]];
+        console.log(fe.registry);
+        fe.registry[e.data[2] + ', ' + e.data[3]].moveMap = [e.data[0], e.data[1]];
       }
     }
-    character.sprite.cid = character.wid;
-    character.sprite.mv = character.mv;
-    character.sprite.builder = character.builder;
-    character.sprite.col = character.col;
-    character.sprite.row = character.row;
-    character.sprite.hud = character.hud;
-    character.sprite.index = 2;
-    _scale(character.sprite);
-    register(character.sprite);
-    character.sprite.getMoveMatrix(character.sprite.col, character.sprite.row);
-    fe.render(main, character.sprite);
-
-    character.sprite.addEventListener('click', function(e) {
-      if(moveCache.length === 0) {
-        handleStageClick(character, e);
-      }
-    });
-
-    character.sprite.getMoveMatrix(character.sprite.col, character.sprite.row);
-    if(moveCache.length !== 0) {
-      drawMoveRects(moveCache);
-    }
-    if(action !== 0) {
-      character.sprite.gotoAndPlay('idle');
-      fe.int = window.setInterval(function() {
-        fe.render(main);
-      }, 1000);
-    }
-  } // end createOverworld
+    cs.hp = c.hp;
+    cs.hpMax = c.hpMax;
+    cs.lvl = c.lvl;
+    cs.cid = c.wid;
+    cs.mv = c.mv;
+    cs.builder = c.builder;
+    cs.col = c.col;
+    cs.row = c.row;
+    cs.hud = c.hud;
+    return;
+  }
 
   function renderArrow(x, y, rot) {
     var img = new Image();
