@@ -24,6 +24,10 @@ function Lyn(col, row) {
       framerate: 2
     }
   };
+  this.hud = {
+    nameDisplay: "Lyn",
+    mugshot: [352, 348, 32, 32]
+  },
   this.battle = {
     wid: 'lyn',
     posY: 40,

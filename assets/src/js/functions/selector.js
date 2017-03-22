@@ -78,7 +78,11 @@ function bindSelector() {
         // Spacebar
         if(fe.registry[selector.col + ', ' + selector.row] !== undefined && !fe.characterSelected) {
           fe.heroSelected = fe.registry[selector.col + ', ' + selector.row];
-          createMoveMap(fe.heroSelected);
+          console.log("Hero Selected: ");
+          console.log(fe.heroSelected);
+          drawMoveRects(fe.heroSelected.moveMap[0], fe.heroSelected);
+          drawAtkRects(fe.heroSelected.moveMap[1], fe.heroSelected);
+          fe.characterSelected = true;
         } else if(fe.characterSelected && fe.hoverSelect === fe.heroSelected) {
           removeMoveMap();
         } else if(fe.characterSelected && fe.heroSelected !== undefined) {
@@ -91,12 +95,34 @@ function bindSelector() {
       fe.hoverSelect = fe.registry[selector.col + ', ' + selector.row];
       console.log("Select Hover Event:");
       console.log(fe.hoverSelect);
+      if(fe.hoverSelect.hud) {
+        displayHud(fe.hoverSelect);
+      }
     } else {
       fe.hoverSelect = undefined;
-
     }
     _scale(selector, scaleB);
     fe.render(main, selector);
     selector.gotoAndPlay(0);
   })
+}
+
+function displayHud(c) {
+  var hud = new createjs.Container();
+  var name = new createjs.Text(c.hud.nameDisplay, '400 20px Quicksand, sans-serif', 'rgba(40, 44, 52, 1.00)');
+  var g = new createjs.Graphics().setStrokeStyle(2).beginStroke('rgba(225, 239, 238, 1.00)').beginFill('rgba(171, 193, 223, .9)').drawRoundRect(0, 0, 100, 34, 5, 5, 5, 5);
+  var hudBg = new createjs.Shape(g);
+  _scale(hudBg);
+  var hudImg = Mugshot(c.hud.mugshot);
+  console.log(hudImg);
+  hudImg.x = 4;
+  hudImg.y = 2;
+  hud.x = pxPerCol / 2;
+  hud.y = pxPerRow / 2;
+  name.x = pxPerCol * 2.5;
+  name.y = 10;
+  hud.addChild(hudBg);
+  hud.addChild(hudImg);
+  hud.addChild(name);
+  fe.render(main, hud);
 }

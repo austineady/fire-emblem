@@ -9,6 +9,7 @@
   fe.heroSelected = undefined;
   fe.arrowStart = [];
   fe.registry = {};
+  var mvWorker = new Worker('assets/src/js/workers/move-worker.js');
   // Base Includes
   //=require utility.js
   //=require functions.js
@@ -27,7 +28,8 @@
       moveCache = fe.moveCache = [],
       metrics = fe.metrics = {},
       selector = fe.selector = {},
-      arrowHead = fe.arrowHead = {};
+      arrowHead = fe.arrowHead = {},
+      Mugshot = undefined;
 
   var totalRows = fe.totalRows = 10,
       totalCols = fe.totalCols = 15,
@@ -56,6 +58,7 @@
 
     setBackground(mainBg);
     createOverworldCharacters();
+    createOverworldSheets();
     createSelector();
     owDebug();
   };
@@ -80,6 +83,26 @@
     }, function(error) {
       console.error(error);
     })
+  }
+
+  function createOverworldSheets() {
+    var mugImg = new Image();
+    mugImg.src = 'assets/images/mugshots/mugshot-conversation-map-clean.png';
+    mugImg.onload = function() {
+      Mugshot = function(frames) {
+        var mugSS = new createjs.SpriteSheet({
+          images: new Array(mugImg),
+          frames: [
+            frames
+          ]
+        });
+        var mugSprite = new createjs.Sprite(mugSS);
+        _scale(mugSprite);
+        return mugSprite;
+      };
+      console.log("Mugshot Constructor Ready");
+      return;
+    }
   }
 
   function register(c) {
@@ -127,28 +150,47 @@
   function createOverworld(ss, action, character) {
     character.sheet = ss;
     character.sprite = new createjs.Sprite(ss, action);
+    character.sprite.getMoveMatrix = function(col, row) {
+      mvWorker.postMessage({
+        'canvasHeight': main.canvas.clientHeight,
+        'canvasWidth': main.canvas.clientWidth,
+        'totalCols': totalCols,
+        'totalRows': totalRows,
+        'mv': character.sprite.mv,
+        'col': col,
+        'row': row,
+        'atk': 1
+      });
+
+      mvWorker.onmessage = function(e) {
+        character.sprite.moveMap = [e.data[0], e.data[1]];
+      }
+    }
     character.sprite.cid = character.wid;
     character.sprite.mv = character.mv;
     character.sprite.builder = character.builder;
     character.sprite.col = character.col;
     character.sprite.row = character.row;
+    character.sprite.hud = character.hud;
     character.sprite.index = 2;
     _scale(character.sprite);
+    register(character.sprite);
+    character.sprite.getMoveMatrix(character.sprite.col, character.sprite.row);
+    fe.render(main, character.sprite);
+
     character.sprite.addEventListener('click', function(e) {
       if(moveCache.length === 0) {
         handleStageClick(character, e);
       }
     });
-    register(character.sprite);
-    console.log(character.sprite);
-    fe.render(main, character.sprite);
 
+    character.sprite.getMoveMatrix(character.sprite.col, character.sprite.row);
     if(moveCache.length !== 0) {
       drawMoveRects(moveCache);
     }
     if(action !== 0) {
       character.sprite.gotoAndPlay('idle');
-      window.setInterval(function() {
+      fe.int = window.setInterval(function() {
         fe.render(main);
       }, 1000);
     }

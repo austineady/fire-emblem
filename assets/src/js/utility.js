@@ -38,7 +38,6 @@ fe.render = function(stage, child) {
 
     stage.addChild(child);
   }
-
   stage.update();
   return;
 }

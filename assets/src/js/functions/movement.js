@@ -133,6 +133,7 @@ function calculateMoveSelect() {
   var rowMem = hero.row;
   hero.col = selector.col;
   hero.row = selector.row;
+  hero.getMoveMatrix(hero.col, hero.row);
   fe.render(main, hero);
   fe.registry[colMem + ', ' + rowMem] = undefined;
   register(hero);
