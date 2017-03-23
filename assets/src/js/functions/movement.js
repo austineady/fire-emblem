@@ -135,7 +135,7 @@ function calculateMoveSelect() {
   var hero = fe.heroSelected;
   var colMem = hero.col;
   var rowMem = hero.row;
-  if(fe.registry[selector.col + ', ' + selector.row] && fe.registry[selector.col + ', ' + selector.row].empty) {
+  if(fe.registry[selector.row][selector.col].requestMove(c)) {
     unregister(hero);
     hero.col = selector.col;
     hero.row = selector.row;

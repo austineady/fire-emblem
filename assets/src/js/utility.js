@@ -26,11 +26,16 @@ function pixelsToCols(p) {
   return Math.floor(p / pxPerCol);
 }
 
+// http://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
+function isEmpty(obj) {
+    return Object.keys(obj).length === 0 && obj.constructor === Object;
+}
+
 fe.render = function(stage, child) {
   if(child) {
     if(child.col !== undefined && child.row !== undefined) {
-      child.x = colsToPixels(child.col - 1);
-      child.y = rowsToPixels(child.row - 1);
+      child.x = colsToPixels(child.col);
+      child.y = rowsToPixels(child.row);
     }
     if(child.index !== undefined) {
       stage.setChildIndex(child, 2);

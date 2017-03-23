@@ -5,8 +5,8 @@ function createSelector() {
   img.src = 'assets/images/overworld/overworld-select.png';
   img.onload = function() {
     var data = {
-      row: 9,
-      col: 14,
+      row: 8,
+      col: 13,
       images: [img],
       frames: {width: 24, height: 24, count: 2, regX: 0, regY: 0}
     }
@@ -25,7 +25,6 @@ function createSelector() {
 function bindSelector() {
   bg.addEventListener('click', handleStageClick);
   document.addEventListener('keydown', function(e) {
-    //stopLoop();
     switch(e.keyCode) {
       case 38:
         // Arrow Up
@@ -78,8 +77,8 @@ function bindSelector() {
         break;
       case 32:
         // Spacebar
-        if(fe.registry[selector.col + ', ' + selector.row] !== undefined && !fe.characterSelected) {
-          fe.heroSelected = fe.registry[selector.col + ', ' + selector.row];
+        if(fe.registry[selector.row][selector.col] !== undefined && !fe.characterSelected) {
+          fe.heroSelected = fe.registry[selector.row][selector.col];
           console.log("Hero Selected: ");
           console.log(fe.heroSelected);
           drawMoveRects(fe.heroSelected.moveMap[0], fe.heroSelected);
@@ -98,10 +97,6 @@ function bindSelector() {
     fe.render(main, selector);
     selector.gotoAndPlay(0);
   })
-
-  document.addEventListener('keyup', function(e) {
-    //startLoop();
-  });
 }
 
 function handleStageClick(e) {
@@ -117,8 +112,8 @@ function handleSelector() {
   } else if(selector.row >= totalRows / 2 && fe.hudBottom) {
     fe.hudBottom = false;
   }
-  if(fe.registry[selector.col + ', ' + selector.row] !== undefined) {
-    fe.hoverSelect = fe.registry[selector.col + ', ' + selector.row];
+  if(fe.registry[selector.row][selector.col] !== undefined) {
+    fe.hoverSelect = fe.registry[selector.row][selector.col];
     console.log("Select Hover Event:");
     console.log(fe.hoverSelect);
     if(fe.hoverSelect.hud) {

@@ -13,7 +13,7 @@
   fe.heroSelected = undefined;
   fe.hud = undefined;
   fe.int = undefined;
-  fe.registry = {};
+  fe.registry = [];
   fe.tMap = [];
 
   var mvWorker = new Worker('assets/src/js/workers/move-worker.js');
@@ -21,6 +21,7 @@
   //=require utility.js
   //=require functions.js
   //=require ui-functions.js
+  //=require maps/terrain.js
   //=require functions/event-handlers.js
   //=require functions/movement.js
   //=require functions/selector.js
@@ -44,7 +45,7 @@
       totalCols = fe.totalCols = 15,
       canvasWidth = fe.canvasWidth = 240,
       ratio = fe.metrics.ratio = 1.5,
-      scale = fe.metrics.scale = 2,
+      scale = fe.metrics.scale = window.innerWidth <= 500 ? window.innerWidth / canvasWidth : 500 / canvasWidth,
       scaleB = fe.metrics.scaleB = 1.5;
 
   var xStartB = fe.metrics.xStartB = canvasWidth * scaleB,
@@ -64,8 +65,8 @@
     me.width = xStart;
     me.height = yStart;
     main = new createjs.Stage('main');
-
-    setBackground(mainBg);
+    createTiles(maps.level0.terrain);
+    setBackground(maps.level0.background);
     createOverworldCharacters();
     createOverworldSheets();
     createSelector();
@@ -80,6 +81,54 @@
     });
     createjs.Ticker.framerate = 4;
   };
+
+  function Tile(col, row, key) {
+    var obj = fe.terrainMap[key];
+    this.col = col;
+    this.row = row;
+    this.tid = obj.tid;
+    this.type = obj.type;
+    this.avo = obj.avo;
+    this.def = obj.def;
+    this.regen = obj.regen;
+    this.collide = obj.collide;
+    this.character = null;
+    this.canMoveTo = false;
+    this.canAttack = false;
+    this.addCharacter = function(c) {
+      if(this.character === null) {
+        this.character = c;
+      } else {
+        console.error('There is already a character in that tile');
+      }
+    }
+    this.removeCharacter = function() {
+      this.character = {};
+    }
+    this.requestMove = function(c) {
+      var self = this;
+      if(!this.collide && this.canMoveTo && !this.canAttack && this.character === null) {
+        this.character = c;
+        this.canMoveTo = false;
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  function createTiles(tmap) {
+    for(var i = 0; i < 10; i++) {
+      var rowArray = [];
+      var row = tmap[i];
+      for(var idx = 0; idx < 15; idx++) {
+        var col = row[idx];
+        var tile = new Tile(idx, i, ('t' + col));
+        rowArray.push(tile);
+      }
+      fe.registry.push(rowArray);
+    }
+  }
 
   function owDebug(x, y, col, row) {
     var paramList = [x, y, col, row];
@@ -117,20 +166,28 @@
         var mugSprite = new createjs.Sprite(mugSS);
         return mugSprite;
       };
-      console.log("Mugshot Constructor Ready");
       return;
     }
   }
 
   function register(c) {
-    fe.registry[c.col + ', ' + c.row] = c;
-    console.log(fe.registry);
+    fe.registry[c.row][c.col].addCharacter(c);
+    console.log('Character Added:');
+    console.log(fe.registry[c.row][c.col]);
     return;
   }
 
   function unregister(c) {
-    delete fe.registry[c.col + ', ' + c.row];
+    fe.registry[c.row][c.col].removeCharacter(c);
     return;
+  }
+
+  function registry(row, col) {
+    try {
+      return fe.registry[row][col];
+    } catch(e) {
+      console.error('Error in function registry');
+    }
   }
 
   function setBackground(path) {
@@ -197,8 +254,9 @@
       });
 
       mvWorker.onmessage = function(e) {
-        console.log(fe.registry);
-        fe.registry[e.data[2] + ', ' + e.data[3]].moveMap = [e.data[0], e.data[1]];
+        fe.registry[e.data[3]][e.data[2]].character.moveMap = [e.data[0], e.data[1]];
+        console.log('Move Map Added: ');
+        console.log(fe.registry[e.data[3]][e.data[2]]);
       }
     }
     cs.hp = c.hp;

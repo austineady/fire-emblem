@@ -1,7 +1,7 @@
 function Brigand(col, row) {
   this.wid = 'brigand';
-  this.row = row || 3;
-  this.col = col || 4;
+  this.row = row || 2;
+  this.col = col || 3;
   this.mv = 5;
   this.hpMax = 21;
   this.hp = this.hpMax;

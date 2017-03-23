@@ -1,8 +1,8 @@
 'use strict';
 
 function Lyn(col, row) {
-  this.row = row || 9;
-  this.col = col || 14;
+  this.row = row || 8;
+  this.col = col || 13;
   this.mv = 5;
   this.hpMax = 21;
   this.hp = this.hpMax;
