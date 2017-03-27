@@ -139,7 +139,7 @@ fe.resetStage = function() {
   fe.hoverSelect = fe.heroSelected;
   fe.heroSelected = undefined;
   fe.hero = {};
-  fe.render(main);
+  fe.render(fe.main);
 }
 
 fe.calculateMoveSelect = function() {

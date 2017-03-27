@@ -42,7 +42,7 @@ function bindSelector() {
         break;
       case 39:
         // Arrow Right
-        if(fe.selector.col + 1 <= totalCols) {
+        if(fe.selector.col + 1 <= fe.totalCols - 1) {
           fe.selector.col += 1;
         } else {
           fe.selector.col = fe.selector.col;
@@ -54,7 +54,7 @@ function bindSelector() {
         break;
       case 40:
         // Arrow Down
-        if(fe.selector.row + 1 <= fe.totalRows) {
+        if(fe.selector.row + 1 <= fe.totalRows - 1) {
           fe.selector.row += 1;
         } else {
           fe.selector.row = fe.selector.row;
@@ -80,14 +80,15 @@ function bindSelector() {
       case 32:
         // Spacebar
         if(fe.registry[fe.selector.row][fe.selector.col].character !== null && !fe.characterSelected) {
-          fe.characterSelected = true;
           fe.heroSelected = fe.registry[fe.selector.row][fe.selector.col].character;
           console.log("Hero Selected: ");
           console.log(fe.heroSelected);
           fe.drawMoveRects(fe.heroSelected.moveMap[0], fe.heroSelected);
           fe.drawAtkRects(fe.heroSelected.moveMap[1], fe.heroSelected);
+          fe.characterSelected = true;
         } else if(fe.characterSelected && fe.hoverSelect === fe.heroSelected) {
           fe.removeMoveMap();
+          fe.resetStage();
         } else if(fe.characterSelected && fe.heroSelected !== undefined) {
           console.log("Space Bar Pressed");
           fe.calculateMoveSelect();
@@ -110,19 +111,19 @@ function handleStageClick(e) {
 
 fe.handleSelector = function() {
   console.log('handleSelector');
-  if(fe.selector.row < fe.totalRows / 2 && !fe.hudBottom) {
+  if(fe.selector.row < (fe.totalRows - 1) / 2 && !fe.hudBottom) {
     fe.hudBottom = true;
-  } else if(fe.selector.row >= fe.totalRows / 2 && fe.hudBottom) {
+  } else if(fe.selector.row >= (fe.totalRows - 1) / 2 && fe.hudBottom) {
     fe.hudBottom = false;
   }
-  if(fe.registry[fe.selector.row][fe.selector.col] !== undefined) {
-    fe.hoverSelect = fe.registry[fe.selector.row][fe.selector.col];
+  if(fe.registry[fe.selector.row][fe.selector.col].character !== null) {
+    fe.hoverSelect = fe.registry[fe.selector.row][fe.selector.col].character;
     console.log("Select Hover Event:");
     console.log(fe.hoverSelect);
-    if(fe.hoverSelect.character && fe.hoverSelect.character.hud) {
+    if(fe.hoverSelect && fe.hoverSelect.hud) {
       console.log("Hud Activated");
       if(!fe.hudActive) {
-        fe.displayHud(fe.hoverSelect.character);
+        fe.displayHud(fe.hoverSelect);
       }
     }
   } else {
