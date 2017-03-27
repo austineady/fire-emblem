@@ -32,7 +32,7 @@
 // 1.13 Thicket
 // 1.14 Wall
 // 0.1 Cliff
-var maps = {
+var Map = {
   level0: {
     background: 'assets/images/background/bg-map-1.png',
     terrain: [
@@ -60,4 +60,4 @@ var maps = {
   }
 };
 
-export default maps;
+export default Map;

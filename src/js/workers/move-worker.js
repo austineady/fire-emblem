@@ -1,7 +1,7 @@
 onmessage = function(e) {
   // Current character coords
-  var col = e.data.col - 1;
-  var row = e.data.row - 1;
+  var col = e.data.col;
+  var row = e.data.row;
   var tMap = e.data.tMap;
   var mv = e.data.mv;
   var pxPerCol = e.data.canvasWidth / e.data.totalCols;
@@ -81,7 +81,8 @@ onmessage = function(e) {
     var filteredMatrix = newMatrix.filter(function(index) {
       var newCol = Math.floor(index[0] / pxPerCol);
       var newRow = Math.floor(index[1] / pxPerRow);
-      if(tMap[newRow] !== undefined && tMap[newRow][newCol] !== undefined && tMap[newRow][newCol] >= 1) {
+      console.log(tMap);
+      if(!tMap[newRow][newCol].collide) {
         return index;
       } else {
         atkMatrix.push(index);

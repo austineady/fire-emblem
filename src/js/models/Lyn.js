@@ -1,5 +1,3 @@
-import {lynUrl, lynBattle} from '../project.js';
-
 'use strict';
 
 function Lyn(col, row) {
@@ -95,5 +93,5 @@ function Lyn(col, row) {
   }
 };
 
-var lyn = new Lyn();
-export default lyn;
+var Lyn = new Lyn();
+export default Lyn;

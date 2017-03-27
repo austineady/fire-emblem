@@ -1,3 +1,7 @@
+import fe from '../Game';
+import {_scale} from '../utility';
+import Mugshot from './mugshot.js';
+
 function Hud(c) {
   // rgba(182, 209, 255, .7)
   var g = new createjs.Graphics().setStrokeStyle(1).beginStroke('rgba(175, 170, 146, 1.00)').beginFill('rgba(255, 255, 255, .75)').drawRoundRect(0, 0, 100, 36, 2, 2, 2, 2);
@@ -46,8 +50,8 @@ function Hud(c) {
   }
 
   var hud = new createjs.Container();
-  hud.x = pxPerCol / 2;
-  hud.y = fe.hudBottom ? pxPerRow * (totalRows - 2) - pxPerRow / 2 : pxPerRow / 2;
+  hud.x = fe.pxPerCol / 2;
+  hud.y = fe.hudBottom ? fe.pxPerRow * (fe.totalRows - 2) - fe.pxPerRow / 2 : fe.pxPerRow / 2;
   hud.addChild(hudBg);
   hud.addChild(hudImg);
   hud.addChild(hudHpLabel);
@@ -56,17 +60,21 @@ function Hud(c) {
   hud.addChild(hudName);
   hud.addChild(hudHealthContainer);
   _scale(hud);
+
   return hud;
 }
 
-function displayHud(c) {
+fe.displayHud = function(c) {
   fe.hud = new Hud(c);
-  fe.render(main, fe.hud);
+  fe.render(fe.main, fe.hud);
   fe.hudActive = true;
 }
 
-function removeHud() {
-  main.removeChild(fe.hud);
+fe.removeHud = function() {
+  fe.main.removeChild(fe.hud);
+  fe.render(fe.main);
   fe.hudActive = false;
-  fe.render(main);
+  fe.hud = {};
 }
+
+export default Hud;

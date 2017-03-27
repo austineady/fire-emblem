@@ -1,117 +1,38 @@
-require('../scss/project.scss');
+import '../scss/project.scss';
+import fe from './Game';
 
-// Base Global Obj
-var fe = {};
-window.fe = window.fe || fe;
-
-fe.characterSelected = false;
-fe.hudActive = false;
-fe.hudBottom = false;
-fe.selectorMoving = false;
-
-fe.heroSelected = undefined;
-fe.hud = undefined;
-fe.int = undefined;
-fe.registry = [];
-fe.tMap = [];
-
-var mvWorker = new Worker('src/js/workers/move-worker.js');
-
-var main = fe.main = {},
-    battle = fe.battle = {},
-    hero = fe.hero = {},
-    bg = fe.bg = {},
-    metrics = fe.metrics = {},
-    selector = fe.selector = {},
-    arrowHead = fe.arrowHead = {},
-    Mugshot = undefined;
-
-var totalRows = fe.totalRows = 10,
-    totalCols = fe.totalCols = 15,
-    canvasWidth = fe.canvasWidth = 240,
-    ratio = fe.metrics.ratio = 1.5,
-    scale = fe.metrics.scale = window.innerWidth <= 500 ? window.innerWidth / canvasWidth : 500 / canvasWidth,
-    scaleB = fe.metrics.scaleB = 1.5;
-
-var xStartB = fe.metrics.xStartB = canvasWidth * scaleB,
-    yStartB = fe.metrics.yStartB = xStartB / ratio,
-    xStart = fe.metrics.xStart = canvasWidth * scale,
-    yStart = fe.metrics.yStart = xStart / ratio,
-    pxPerCol = fe.pxPerCol = xStart / totalCols,
-    pxPerRow = fe.pxPerRow = yStart / totalRows;
-
-import { _scale, rowsToPixels, pixelsToCols, colsToPixels, pixelsToRows, isEmpty, render, update, renderChild } from './utility';
-fe.render = render;
-fe.update = update;
-fe.renderChild = renderChild;
-import { createSelector, bindSelector, handleSelector, handleStageClick } from './functions/selector.js';
-import * as game from './game';
-import * as ui from './ui-functions';
-import lyn from './heroes/lyn.js';
-import brigand from './enemies/brigand.js';
-import terrainMap from './maps/terrain.js';
+import { _scale, rowsToPixels, pixelsToCols, colsToPixels, pixelsToRows, isEmpty } from './utility';
+import { bindSelector, handleStageClick } from './functions/selector.js';
+//import * as ui from './ui-functions';
+import Lyn from './models/Lyn.js';
+import Brigand from './models/Brigand.js';
+import Tile from './models/Tile.js';
 import * as movement from './functions/movement.js';
 import * as hud from './functions/hud.js';
-import maps from './maps/level-0.js';
+import Map from './maps/Map_0.js';
+import Mugshot from './functions/mugshot.js';
 
 document.onload = createStage();
 
 function createStage() {
-  var me = document.getElementById('main');
-  me.width = xStart;
-  me.height = yStart;
-  main = new createjs.Stage('main');
-  createTiles(maps.level0.terrain);
-  setBackground(maps.level0.background);
+  var el = document.getElementById('main');
+  el.width = fe.xStart;
+  el.height = fe.yStart;
+  createTiles(Map.level0.terrain);
+  setBackground(Map.level0.background);
   createOverworldCharacters();
   createOverworldSheets();
-  createSelector();
-  owDebug();
-  window.setTimeout(handleSelector, 100);
+  fe.createSelector();
+  window.setTimeout(fe.handleSelector, 100);
   createjs.Ticker.addEventListener("tick", function (event) {
       // Actions carried out each tick (aka frame)
-      fe.render(main);
+      fe.render(fe.main);
       if (!event.paused) {
           // Actions carried out when the Ticker is not paused.
       }
   });
   createjs.Ticker.framerate = 4;
 };
-
-function Tile(col, row, key) {
-  var obj = terrainMap[key];
-  this.col = col;
-  this.row = row;
-  this.tid = obj.tid;
-  this.type = obj.type;
-  this.avo = obj.avo;
-  this.def = obj.def;
-  this.regen = obj.regen;
-  this.collide = obj.collide;
-  this.character = null;
-  this.canMoveTo = false;
-  this.canAttack = false;
-  this.addCharacter = function(c) {
-    if(this.character === null) {
-      this.character = c;
-    } else {
-      console.error('There is already a character in that tile');
-    }
-  }
-  this.removeCharacter = function() {
-    this.character = {};
-  }
-  this.requestMove = function(c) {
-    var self = this;
-    if(!this.collide && this.canMoveTo && !this.canAttack && this.character === null) {
-      this.character = c;
-      this.canMoveTo = false;
-      return true;
-    } else {
-      return false;
-    }
-  }
-}
 
 function createTiles(tmap) {
   for(var i = 0; i < 10; i++) {
@@ -126,23 +47,14 @@ function createTiles(tmap) {
   }
 }
 
-function owDebug(x, y, col, row) {
-  var paramList = [x, y, col, row];
-  var idList = ['selector-x', 'selector-y', 'selector-col', 'selector-row'];
-  for(var i=0;i<idList.length;i++) {
-    var el = document.getElementById(idList[i]);
-    el.textContent = paramList[i];
-  }
-}
-
 function createOverworldCharacters() {
-  buildSheet(lyn).then(function(ss) {
-    createOverworld(ss, 'idle', lyn);
+  buildSheet(Lyn).then(function(ss) {
+    createOverworld(ss, 'idle', Lyn);
   }, function(error) {
     console.error(error);
   })
-  buildSheet(brigand).then(function(ss) {
-    createOverworld(ss, 'idle', brigand);
+  buildSheet(Brigand).then(function(ss) {
+    createOverworld(ss, 'idle', Brigand);
   }, function(error) {
     console.error(error);
   })
@@ -152,16 +64,7 @@ function createOverworldSheets() {
   var mugImg = new Image();
   mugImg.src = 'assets/images/mugshots/mugshot-conversation-map-clean.png';
   mugImg.onload = function() {
-    Mugshot = function(frames) {
-      var mugSS = new createjs.SpriteSheet({
-        images: new Array(mugImg),
-        frames: [
-          frames
-        ]
-      });
-      var mugSprite = new createjs.Sprite(mugSS);
-      return mugSprite;
-    };
+    fe.mugSheet = mugImg;
     return;
   }
 }
@@ -173,8 +76,24 @@ function register(c) {
   return;
 }
 
+function registerMoveRect(r) {
+  fe.registry[r.row][r.col].moveTile = true;
+  return;
+}
+
+function registerAtkRect(r) {
+  fe.registry[r.row][r.col].atkTile = true;
+  return;
+}
+
 function unregister(c) {
   fe.registry[c.row][c.col].removeCharacter(c);
+  return;
+}
+
+function unregisterMoveTiles(c) {
+  fe.registry[c.row][c.col].moveTile = false;
+  fe.registry[c.row][c.col].atkTile = false;
   return;
 }
 
@@ -187,10 +106,10 @@ function registry(row, col) {
 }
 
 function setBackground(path) {
-  bg = new createjs.Bitmap(path);
-  _scale(bg);
-  main.addChild(bg);
-  main.setChildIndex(bg, -1);
+  fe.bg = new createjs.Bitmap(path);
+  _scale(fe.bg);
+  fe.main.addChild(fe.bg);
+  fe.main.setChildIndex(fe.bg, -1);
 }
 
 function buildSheet(character) {
@@ -229,7 +148,7 @@ function createOverworld(ss, action, character) {
   character.sprite.index = 2;
   _scale(character.sprite);
   register(character.sprite);
-  fe.render(main, character.sprite);
+  fe.render(fe.main, character.sprite);
 
   character.sprite.gotoAndPlay('idle');
   character.sprite.getMoveMatrix(character.sprite.col, character.sprite.row);
@@ -237,30 +156,14 @@ function createOverworld(ss, action, character) {
 
 function bindCharacterProps(cs, c) {
   cs.getMoveMatrix = function(col, row) {
-    mvWorker.postMessage({
-      'tMap': fe.tMap,
-      'canvasHeight': main.canvas.clientHeight,
-      'canvasWidth': main.canvas.clientWidth,
-      'totalCols': totalCols,
-      'totalRows': totalRows,
-      'mv': c.mv,
-      'col': col,
-      'row': row,
-      'atk': 1
-    });
-
-    mvWorker.onmessage = function(e) {
-      fe.registry[e.data[3]][e.data[2]].character.moveMap = [e.data[0], e.data[1]];
-      console.log('Move Map Added: ');
-      console.log(fe.registry[e.data[3]][e.data[2]]);
-    }
+    var mvData = fe.calculateMove(cs, c);
+    fe.registry[mvData[3]][mvData[2]].character.moveMap = [mvData[0], mvData[1]];
   }
   cs.hp = c.hp;
   cs.hpMax = c.hpMax;
   cs.lvl = c.lvl;
   cs.cid = c.wid;
   cs.mv = c.mv;
-  cs.builder = c.builder;
   cs.col = c.col;
   cs.row = c.row;
   cs.hud = c.hud;
@@ -297,10 +200,10 @@ function renderArrow(x, y, rot) {
     arrow.row = selector.row;
     arrow.index = 3;
     arrow.rotation = rot;
-    fe.renderChild(main, arrow);
-    fe.render(main);
+    fe.renderChild(fe.main, arrow);
+    fe.render(fe.main);
     arrow.gotoAndPlay(0);
   }
 }
 
-export { bg, mainBg, main, scale, scaleB, xStart, yStart, totalRows, totalCols };
+export { register, unregister, registerMoveRect, registerAtkRect, unregisterMoveTiles };

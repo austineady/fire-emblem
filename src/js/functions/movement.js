@@ -1,149 +1,160 @@
-function createMoveMap(c) {
+import fe from '../Game.js';
+import { register, unregister, registerMoveRect, registerAtkRect, unregisterMoveTiles } from '../project.js';
+
+fe.calculateMove = function(c) {
   // Current character coords
-  var col = c.col - 1;
-  var row = c.row - 1;
+  var col = c.col;
+  var row = c.row;
+  var tMap = fe.registry;
+  var cw = fe.main.canvas.clientWidth;
+  var pxPerCol = fe.pxPerCol;
+  var pxPerRow = fe.pxPerRow;
+  var ch = fe.main.canvas.clientHeight;
   var mv = c.mv;
-  var cCalc = col * pxPerCol;
-  var rCalc = row * pxPerRow;
-  var cw = main.canvas.clientWidth;
-  var ch = main.canvas.clientHeight;
+  var atk = 1;
+  var mvTotal = mv + atk;
   var matrixArr = [];
-  var newMatrix = [];
-  var atkMatrix = [];
-  var arrCache = [];
-  var mvTotal = mv + 1;
+  var atkArr = [];
 
   for(var i=0; i <= mvTotal; i++) {
     for(var idx=0; idx<= mvTotal; idx++) {
-      if(idx + i <= mvTotal && idx + i !== 0) {
-        matrixArr.push([idx, i]);
+      if(idx + i !== 0) {
+        if(idx + i <= mv) {
+          // If tile is within move limits
+          matrixArr.push([idx, i]);
+        } else if(idx + i > mv && idx + i <= mvTotal) {
+          // If tile is within attack limits
+          atkArr.push([idx, i]);
+        }
       }
     }
   }
 
-  matrixArr.forEach(function(item) {
-    var newItem = [];
-    var cacheString = '';
-    newItem[0] = (col + item[0]) * pxPerCol;
-    newItem[1] = (row + item[1]) * pxPerRow;
-    cacheString = newItem[0] + ', ' + newItem[1];
-    if(arrCache.indexOf(cacheString) === -1 && newItem[0] <= cw && newItem[0] >= 0 && newItem[1] <= ch) {
-      arrCache.push(cacheString);
-      if(item[0] + item[1] < mvTotal) {
-        newMatrix.push(newItem);
-      } else {
-        atkMatrix.push(newItem);
-      }
-    }
-    newItem = [];
-    newItem[0] = (col - item[0]) * pxPerCol;
-    newItem[1] = (row - item[1]) * pxPerRow;
-    cacheString = newItem[0] + ', ' + newItem[1];
-    if(arrCache.indexOf(cacheString) === -1 && newItem[0] <= cw && newItem[0] >= 0 && newItem[1] <= ch) {
-      arrCache.push(cacheString);
-      if(item[0] + item[1] < mvTotal) {
-        newMatrix.push(newItem);
-      } else {
-        atkMatrix.push(newItem);
-      }
-    }
-    newItem = [];
-    newItem[0] = (col + item[0]) * pxPerCol;
-    newItem[1] = (row - item[1]) * pxPerRow;
-    cacheString = newItem[0] + ', ' + newItem[1];
-    if(arrCache.indexOf(cacheString) === -1 && newItem[0] <= cw && newItem[0] >= 0 && newItem[1] <= ch) {
-      arrCache.push(cacheString);
-      if(item[0] + item[1] < mvTotal) {
-        newMatrix.push(newItem);
-      } else {
-        atkMatrix.push(newItem);
-      }
-    }
-    newItem = [];
-    newItem[0] = (col - item[0]) * pxPerCol;
-    newItem[1] = (row + item[1]) * pxPerRow;
-    cacheString = newItem[0] + ', ' + newItem[1];
-    if(arrCache.indexOf(cacheString) === -1 && newItem[0] <= cw && newItem[0] >= 0 && newItem[1] <= ch) {
-      arrCache.push(cacheString);
-      if(item[0] + item[1] < mvTotal) {
-        newMatrix.push(newItem);
-      } else {
-        atkMatrix.push(newItem);
-      }
-    }
-    return;
-  })
-  //console.log(newMatrix);
-  //console.log(atkMatrix);
-  moveCache = newMatrix;
+  var mvMatrix = buildMatrices(matrixArr);
+  var atkMatrix = buildMatrices(atkArr);
 
-  drawMoveRects(newMatrix, c);
-  drawAtkRects(atkMatrix, c);
-  fe.characterSelected = true;
+  function buildMatrices(arr) {
+    var arrCache = [];
+    var newMatrix = [];
+    arr.forEach(function(item) {
+      var newItem = [];
+      var cacheString = '';
+      newItem[0] = col + item[0];
+      newItem[1] = row + item[1];
+      cacheString = newItem[0] + ', ' + newItem[1];
+      if(arrCache.indexOf(cacheString) === -1 && col + item[0] <= fe.totalCols - 1 && col + item[0] >= 0 && row + item[1] <= fe.totalRows - 1) {
+        arrCache.push(cacheString);
+        newMatrix.push(newItem);
+      }
+      var newItem = [];
+      newItem[0] = col - item[0];
+      newItem[1] = row - item[1];
+      cacheString = newItem[0] + ', ' + newItem[1];
+      if(arrCache.indexOf(cacheString) === -1 && col - item[0] <= cw && fe.totalCols - 1 >= 0 && row - item[1] <= fe.totalRows - 1) {
+        arrCache.push(cacheString);
+        newMatrix.push(newItem);
+      }
+      var newItem = [];
+      newItem[0] = col + item[0];
+      newItem[1] = row - item[1];
+      cacheString = newItem[0] + ', ' + newItem[1];
+      if(arrCache.indexOf(cacheString) === -1 && col + item[0] <= fe.totalCols - 1 && col + item[0] >= 0 && row - item[1] <= fe.totalRows - 1) {
+        arrCache.push(cacheString);
+        newMatrix.push(newItem);
+      }
+      var newItem = [];
+      newItem[0] = col - item[0];
+      newItem[1] = row + item[1];
+      cacheString = newItem[0] + ', ' + newItem[1];
+      if(arrCache.indexOf(cacheString) === -1 && col - item[0] <= fe.totalCols && col - item[0] >= 0 && row + item[1] <= fe.totalRows) {
+        arrCache.push(cacheString);
+        newMatrix.push(newItem);
+      }
+    })
+    return newMatrix;
+  }
+
+  mvMatrix = mvMatrix.filter(function(item) {
+    if(fe.registry[item[1]] !== undefined && fe.registry[item[1]][item[0]] !== undefined && fe.registry[item[1]][item[0]].collide === true) {
+      atkMatrix.push(item);
+    } else {
+      return item;
+    }
+  })
+  return([mvMatrix, atkMatrix, col, row]);
 }
 
-function drawMoveRects(arr, c) {
+fe.drawMoveRects = function(arr, c) {
   fe.moveContainer = new createjs.Container();
   arr.forEach(function(coord) {
     var rect = new createjs.Shape();
-    rect.col = coord[0] / pxPerCol + 1;
-    rect.row = coord[1] / pxPerRow + 1;
-    rect.graphics.beginFill('rgba(92, 165, 225, .6)').drawRect(coord[0], coord[1], pxPerCol - 1, pxPerRow - 1);
-    rect.empty = true;
-    register(rect);
-    fe.moveContainer.addChild(rect);
+    rect.col = coord[0];
+    rect.row = coord[1];
+    rect.graphics.beginFill('rgba(92, 165, 225, .6)').drawRect(coord[0] * fe.pxPerCol, coord[1] * fe.pxPerRow, fe.pxPerCol - 1, fe.pxPerRow - 1);
+    rect.movable = true;
+    if(fe.registry[rect.row] && fe.registry[rect.row][rect.col] !== undefined) {
+      registerMoveRect(rect);
+      fe.moveContainer.addChild(rect);
+    } else {
+      return;
+    }
   });
-  main.addChild(fe.moveContainer);
-  main.setChildIndex(fe.moveContainer, 1);
-  main.update();
+  fe.main.addChild(fe.moveContainer);
+  fe.main.setChildIndex(fe.moveContainer, 1);
+  fe.main.update();
 }
 
-function drawAtkRects(arr, c) {
+fe.drawAtkRects = function(arr, c) {
   fe.moveContainer = fe.moveContainer ? fe.moveContainer : new createjs.Container();
   arr.forEach(function(coord) {
     var rect = new createjs.Shape();
-    rect.col = coord[0] / pxPerCol;
-    rect.row = coord[1] / pxPerRow;
-    rect.graphics.beginFill('rgba(244, 67, 55, .6)').drawRect(coord[0], coord[1], pxPerCol - 1, pxPerRow - 1);
+    rect.col = coord[0];
+    rect.row = coord[1];
+    rect.graphics.beginFill('rgba(244, 67, 55, .6)').drawRect(coord[0] * fe.pxPerCol, coord[1] * fe.pxPerRow, fe.pxPerCol - 1, fe.pxPerRow - 1);
     rect.addEventListener('click', function(e) {
       handleRectClick(rect, e, c);
     });
-    fe.moveContainer.addChild(rect);
+    if(fe.registry[rect.row] && fe.registry[rect.row][rect.col] !== undefined) {
+      registerAtkRect(rect);
+      fe.moveContainer.addChild(rect);
+    } else {
+      return;
+    }
   });
-  main.addChild(fe.moveContainer);
-  main.setChildIndex(fe.moveContainer, 1);
-  main.update();
+  fe.main.addChild(fe.moveContainer);
+  fe.main.setChildIndex(fe.moveContainer, 1);
+  fe.main.update();
 }
 
-function removeMoveMap() {
+fe.removeMoveMap = function() {
   fe.moveContainer.children.forEach(function(child) {
-    unregister(child);
+    unregisterMoveTiles(child);
   });
-  main.removeChild(fe.moveContainer);
+  fe.main.removeChild(fe.moveContainer);
   return;
 }
 
-function resetStage() {
+fe.resetStage = function() {
   fe.characterSelected = false;
   fe.hoverSelect = fe.heroSelected;
   fe.heroSelected = undefined;
-  hero = {};
+  fe.hero = {};
   fe.render(main);
 }
 
-function calculateMoveSelect() {
+fe.calculateMoveSelect = function() {
   var hero = fe.heroSelected;
-  var colMem = hero.col;
-  var rowMem = hero.row;
-  if(fe.registry[selector.row][selector.col].requestMove(c)) {
+  if(fe.registry[fe.selector.row][fe.selector.col].requestMove(hero)) {
+    console.log("Request Move True");
     unregister(hero);
-    hero.col = selector.col;
-    hero.row = selector.row;
-    removeMoveMap();
+    hero.col = fe.selector.col;
+    hero.row = fe.selector.row;
+    fe.removeMoveMap();
     register(hero);
     hero.getMoveMatrix(hero.col, hero.row);
-    fe.render(main, hero);
-    resetStage();
+    fe.update(fe.main, hero);
+    fe.resetStage();
+    console.log("Character Moved to row, col: " + hero.row + ', ' + hero.col);
   }
 }
 

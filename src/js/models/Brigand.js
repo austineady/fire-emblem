@@ -58,5 +58,5 @@ function Brigand(col, row) {
   }
 };
 
-var brigand = new Brigand();
-export default brigand;
+var Brigand = new Brigand();
+export default Brigand;
