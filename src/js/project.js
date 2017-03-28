@@ -164,6 +164,7 @@ function bindCharacterProps(cs, c) {
   cs.lvl = c.lvl;
   cs.cid = c.wid;
   cs.mv = c.mv;
+  cs.enemy = c.enemy;
   cs.col = c.col;
   cs.row = c.row;
   cs.hud = c.hud;

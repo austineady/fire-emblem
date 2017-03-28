@@ -1,4 +1,4 @@
-var mvWorker = require('worker-loader!./workers/move-worker.js');
+//var mvWorker = require('worker-loader!./workers/move-worker.js');
 // Base Global Obj
 var fe = {};
 window.fe = window.fe || fe;
@@ -7,6 +7,7 @@ fe.characterSelected = false;
 fe.hudActive = false;
 fe.hudBottom = false;
 fe.selectorMoving = false;
+fe.userMenuActive = false;
 
 fe.heroSelected = undefined;
 fe.hud = undefined;
@@ -37,7 +38,7 @@ fe.yStart = fe.xStart / fe.ratio;
 fe.pxPerCol = fe.xStart / fe.totalCols;
 fe.pxPerRow = fe.yStart / fe.totalRows;
 
-fe.worker = new mvWorker();
+//fe.worker = new mvWorker();
 
 var Mugshot = undefined;
 

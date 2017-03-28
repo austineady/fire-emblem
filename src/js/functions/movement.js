@@ -1,5 +1,6 @@
 import fe from '../Game.js';
 import { register, unregister, registerMoveRect, registerAtkRect, unregisterMoveTiles } from '../project.js';
+import { _scale } from '../utility';
 
 fe.calculateMove = function(c) {
   // Current character coords
@@ -138,24 +139,107 @@ fe.resetStage = function() {
   fe.characterSelected = false;
   fe.hoverSelect = fe.heroSelected;
   fe.heroSelected = undefined;
-  fe.hero = {};
+  fe.hero = null;
   fe.render(fe.main);
 }
 
 fe.calculateMoveSelect = function() {
   var hero = fe.heroSelected;
   if(fe.registry[fe.selector.row][fe.selector.col].requestMove(hero)) {
-    console.log("Request Move True");
-    unregister(hero);
+    // Character has moved, show turn options
     hero.col = fe.selector.col;
     hero.row = fe.selector.row;
-    fe.removeMoveMap();
-    register(hero);
-    hero.getMoveMatrix(hero.col, hero.row);
-    fe.update(fe.main, hero);
-    fe.resetStage();
+    fe.update(fe.main, fe.heroSelected);
     console.log("Character Moved to row, col: " + hero.row + ', ' + hero.col);
+    showUserMenu(hero);
   }
+}
+
+function showUserMenu(c) {
+  fe.userMenu = new createjs.Container();
+  var opts = getUserOptions(c);
+  var userMenuBg = new createjs.Shape(new createjs.Graphics().setStrokeStyle(1).beginStroke('rgba(247, 246, 183, 1.00)').beginFill('rgba(89, 91, 189, .9)').drawRect(0, 0, 45, opts.length * 14));
+  fe.userMenu.addChild(userMenuBg);
+
+  opts.forEach(function(option, index) {
+    var optionText = new createjs.Text(option, '500 9px Quicksand, sans-serif', '#fff');
+    optionText.shadow = new createjs.Shadow('#000', 0, 0, 5);
+
+    var textContainer = new createjs.Container();
+    textContainer.addChild(optionText);
+    var textY = index > 0 ? 7 * (index + 1) : 2;
+    textContainer.setBounds(5, textY, 45, 9);
+    textContainer.y = textY;
+    textContainer.x = 5;
+    textContainer.height = 9;
+    textContainer.width = 45;
+    fe.userMenu.addChild(textContainer);
+    return;
+  })
+  fe.userMenu.x = (fe.selector.col - 3) * fe.pxPerCol;
+  fe.userMenu.y = (fe.selector.row - 1) * fe.pxPerRow;
+  fe.userMenu.selectorIndex = 1;
+  fe.userMenu.optsLength = opts.length;
+  var xVal = fe.userMenu.children[fe.userMenu.selectorIndex].x - 10;
+  var yVal = fe.userMenu.children[fe.userMenu.selectorIndex].height / 2 + 2;
+  fe.menuSelector = new createjs.Shape(new createjs.Graphics().setStrokeStyle(1).beginStroke('#000').beginFill("#fff").drawPolyStar(xVal,yVal,5,3,2,0));
+  console.log(fe.userMenu.children[fe.userMenu.selectorIndex]);
+  fe.userMenu.children[fe.userMenu.selectorIndex].addChild(fe.menuSelector);
+
+  _scale(fe.userMenu);
+  fe.render(fe.main, fe.userMenu);
+  fe.userMenuActive = true;
+
+  fe.userMenu.update = function(y) {
+    fe.userMenu.children[fe.userMenu.selectorIndex].removeChild(fe.menuSelector);
+    fe.userMenu.children[y].addChild(fe.menuSelector);
+    fe.userMenu.selectorIndex = y;
+    fe.render(fe.main);
+  }
+}
+
+function hideUserMenu() {
+  fe.main.removeChild(fe.userMenu);
+  fe.userMenuActive = false;
+}
+
+function getUserOptions(c) {
+  // Will need to be changed to account for range
+  var tileBottom = fe.registry[fe.selector.row - 1][fe.selector.col];
+  var tileTop = fe.registry[fe.selector.row + 1][fe.selector.col];
+  var tileLeft = fe.registry[fe.selector.row][fe.selector.col - 1];
+  var tileRight = fe.registry[fe.selector.row][fe.selector.col + 1];
+  var tiles = [tileBottom, tileTop, tileLeft, tileRight];
+  var opts = [];
+
+  tiles.forEach(function(tile) {
+    if(tile.atkTile && tile.character !== null && tile.character.enemy) {
+      // First Check for Attack
+      if(opts.indexOf('Attack') === -1) {
+        opts.push('Attack');
+      }
+    } else if(tile.character !== null && !tile.character.enemy) {
+      // Eventually check for constitution
+      opts.push('Rescue', 'Item', 'Trade', 'Wait');
+    }
+  })
+
+  if(opts.indexOf('Item') === -1 && opts.indexOf('Wait') === -1) {
+    opts.push('Item', 'Wait');
+  }
+  return opts;
+}
+
+fe.endHeroTurn = function() {
+  var hero = fe.heroSelected;
+  unregister(hero);
+  hero.col = fe.selector.col;
+  hero.row = fe.selector.row;
+  register(hero);
+  fe.removeMoveMap();
+  hero.getMoveMatrix(hero.col, hero.row);
+  fe.update(fe.main, hero);
+  fe.resetStage();
 }
 
 function handleMovement(x, y, c) {

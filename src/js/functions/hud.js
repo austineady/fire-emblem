@@ -3,9 +3,7 @@ import {_scale} from '../utility';
 import Mugshot from './mugshot.js';
 
 function Hud(c) {
-  // rgba(182, 209, 255, .7)
-  var g = new createjs.Graphics().setStrokeStyle(1).beginStroke('rgba(175, 170, 146, 1.00)').beginFill('rgba(255, 255, 255, .75)').drawRoundRect(0, 0, 100, 36, 2, 2, 2, 2);
-  var hudBg = new createjs.Shape(g);
+  var hudBg = new createjs.Shape(new createjs.Graphics().setStrokeStyle(1).beginStroke('rgba(247, 246, 183, 1.00)').beginFill('rgba(168, 162, 245, .7)').drawRoundRect(0, 0, 100, 36, 2, 2, 2, 2));
   hudBg.shadow = new createjs.Shadow('rgba(0, 0, 0, .6)', 1, 1, 1);
 
   var hudHpLabel = new createjs.Text('HP', '700 11px Quicksand, sans-serif', '#fff');

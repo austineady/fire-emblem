@@ -6,6 +6,7 @@ function Brigand(col, row) {
   this.hpMax = 21;
   this.hp = this.hpMax;
   this.lvl = 1;
+  this.enemy = true;
   this.builder = function(col, row) {
     return new Brigand(col, row);
   }

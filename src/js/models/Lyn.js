@@ -7,6 +7,7 @@ function Lyn(col, row) {
   this.hpMax = 21;
   this.hp = this.hpMax;
   this.lvl = 1;
+  this.enemy = false;
   this.builder = function(col, row) {
     return new Lyn(col, row);
   },
