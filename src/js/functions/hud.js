@@ -43,6 +43,7 @@ function Hud(c) {
   var hudImg = c.hud.mugshot !== undefined ? Mugshot(c.hud.mugshot) : '';
   hudImg.x = c.hud.imgX || 3;
   hudImg.y = c.hud.imgY || 3;
+
   if(hudImg === '') {
     console.error('Mugshot was invalid. Check the sprite sheet path');
   }

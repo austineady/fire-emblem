@@ -147,8 +147,8 @@ fe.calculateMoveSelect = function() {
   var hero = fe.heroSelected;
   if(fe.registry[fe.selector.row][fe.selector.col].requestMove(hero)) {
     // Character has moved, show turn options
-    hero.col = fe.selector.col;
-    hero.row = fe.selector.row;
+    hero.col = fe.selector.col === hero.col ? hero.col : fe.selector.col;
+    hero.row = fe.selector.row === hero.row ? hero.row : fe.selector.row;
     fe.update(fe.main, fe.heroSelected);
     console.log("Character Moved to row, col: " + hero.row + ', ' + hero.col);
     showUserMenu(hero);
@@ -198,7 +198,7 @@ function showUserMenu(c) {
   }
 }
 
-function hideUserMenu() {
+fe.hideUserMenu = function() {
   fe.main.removeChild(fe.userMenu);
   fe.userMenuActive = false;
 }
@@ -211,6 +211,7 @@ function getUserOptions(c) {
   var tileRight = fe.registry[fe.selector.row][fe.selector.col + 1];
   var tiles = [tileBottom, tileTop, tileLeft, tileRight];
   var opts = [];
+  console.log(tiles);
 
   tiles.forEach(function(tile) {
     if(tile.atkTile && tile.character !== null && tile.character.enemy) {
@@ -233,10 +234,10 @@ function getUserOptions(c) {
 fe.endHeroTurn = function() {
   var hero = fe.heroSelected;
   unregister(hero);
+  fe.removeMoveMap();
   hero.col = fe.selector.col;
   hero.row = fe.selector.row;
   register(hero);
-  fe.removeMoveMap();
   hero.getMoveMatrix(hero.col, hero.row);
   fe.update(fe.main, hero);
   fe.resetStage();

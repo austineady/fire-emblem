@@ -16,6 +16,13 @@ document.onload = createStage();
 
 function createStage() {
   var el = document.getElementById('main');
+  // var view = document.getElementById('view');
+  // var hudEl = document.getElementById('hud');
+  // view.style.top = 0;
+  // view.style.width = el.clientWidth;
+  // view.style.height = el.clientHeight;
+  // view.style.left = 0;
+  // hudEl.style.transform = "scale(2) translateY(20px) translateX(30px)";
   el.width = fe.xStart;
   el.height = fe.yStart;
   createTiles(Map.level0.terrain);
@@ -206,5 +213,123 @@ function renderArrow(x, y, rot) {
     arrow.gotoAndPlay(0);
   }
 }
+
+fe.bg.addEventListener('click', handleStageClick);
+document.addEventListener('keydown', function(e) {
+  switch(e.keyCode) {
+    case 38:
+      // Arrow Up
+      if(!fe.userMenuActive) {
+        if(fe.selector.row - 1 >= 0) {
+          fe.selector.row -= 1;
+        } else {
+          fe.selector.row = fe.selector.row;
+        }
+        var arrowY = fe.selector.row;
+        var arrowX = fe.selector.col;
+        fe.render(fe.main, fe.selector);
+      } else {
+        var index = fe.userMenu.selectorIndex - 1 >= 1 ? fe.userMenu.selectorIndex - 1 : fe.userMenu.selectorIndex;
+        fe.userMenu.update(index);
+      }
+      //renderArrow(arrowX, arrowY, 0);
+      break;
+    case 39:
+      // Arrow Right
+      if(!fe.userMenuActive) {
+        if(fe.selector.col + 1 <= fe.totalCols - 1) {
+          fe.selector.col += 1;
+        } else {
+          fe.selector.col = fe.selector.col;
+        }
+        var arrowY = fe.selector.row;
+        var arrowX = fe.selector.col;
+        fe.render(fe.main, fe.selector);
+      }
+      //renderArrow(arrowX, arrowY, 90);
+      break;
+    case 40:
+      // Arrow Down
+      if(!fe.userMenuActive) {
+        if(fe.selector.row + 1 <= fe.totalRows - 1) {
+          fe.selector.row += 1;
+        } else {
+          fe.selector.row = fe.selector.row;
+        }
+        var arrowY = fe.selector.row;
+        var arrowX = fe.selector.col;
+        fe.render(fe.main, fe.selector);
+      } else {
+        var index = fe.userMenu.selectorIndex + 1 <= fe.userMenu.optsLength ? fe.userMenu.selectorIndex + 1 : fe.userMenu.selectorIndex;
+        fe.userMenu.update(index);
+      }
+      //renderArrow(arrowX, arrowY, 180);
+      break;
+    case 37:
+      // Arrow Left
+      if(!fe.userMenuActive) {
+        fe.selector.row = fe.selector.row;
+        if(fe.selector.col - 1 >= 0) {
+          fe.selector.col -= 1;
+        } else {
+          fe.selector.col = fe.selector.col;
+        }
+        var arrowY = fe.selector.row;
+        var arrowX = fe.selector.col;
+        fe.render(fe.main, fe.selector);
+      }
+      //renderArrow(arrowX, arrowY, 270);
+      break;
+    case 32:
+      // Spacebar
+      if(!fe.userMenuActive) {
+        if(fe.registry[fe.selector.row][fe.selector.col].character !== null && !fe.characterSelected) {
+          // Character has been selected, change overworld animation
+          fe.heroSelected = fe.registry[fe.selector.row][fe.selector.col].character;
+          console.log("Hero Selected: ");
+          console.log(fe.heroSelected);
+          fe.drawMoveRects(fe.heroSelected.moveMap[0], fe.heroSelected);
+          fe.drawAtkRects(fe.heroSelected.moveMap[1], fe.heroSelected);
+          fe.characterSelected = true;
+        } else if(fe.characterSelected && fe.hoverSelect === fe.heroSelected) {
+          // Same character has been deselected
+          fe.removeMoveMap();
+          fe.resetStage();
+        } else if(fe.characterSelected && fe.heroSelected !== undefined) {
+          // Calculate Character Move
+          fe.calculateMoveSelect();
+        }
+      } else {
+        var choice = fe.menuSelector.parent.children[0].text;
+        fe.hideUserMenu();
+        if(choice === 'Wait') {
+          console.log("Turn End");
+          fe.endHeroTurn();
+        } else if(choice === 'Attack') {
+          console.log("Attack Chosen");
+          // Show inventory weapon select and mugshot
+          fe.removeMoveMap();
+          fe.moveContainer = null;
+          fe.main.update();
+          fe.drawAtkRects([
+            // Tile Bottom
+            [fe.selector.row - 1, fe.selector.col],
+            // Tile Top
+            [fe.selector.row + 1, fe.selector.col],
+            // Tile Left
+            [fe.selector.row, fe.selector.col - 1],
+            // Tile Right
+            [fe.selector.row, fe.selector.col + 1]
+          ], fe.heroSelected);
+        }
+      }
+      break;
+  }
+  fe.handleSelector();
+  _scale(fe.selector, fe.scaleB);
+  fe.render(fe.main, fe.selector);
+  fe.selector.gotoAndPlay(0);
+})
+
 
 export { register, unregister, registerMoveRect, registerAtkRect, unregisterMoveTiles };
